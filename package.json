@@ -1,0 +1,28 @@
+{
+  "name": "serverormtemplate",
+  "version": "1.0.0",
+  "description": "Template de api rest usando node e typeORM",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon --exec ts-node ./src/index.ts",
+    "compile": "tsc -build",
+    "build": "pkg -t node14-win ./dist/index.js"
+  },
+  "author": "Manoel B. R. Filho",
+  "license": "ISC",
+  "dependencies": {
+    "@types/express": "^4.17.17",
+    "@types/node": "^18.15.11",
+    "decimal.js": "^10.4.3",
+    "express": "^4.18.2",
+    "morgan": "^1.10.0",
+    "nodemon": "^2.0.22",
+    "pg": "^8.10.0",
+    "reflect-metadata": "^0.1.13",
+    "ts-node": "^10.9.1",
+    "typeorm": "^0.3.14",
+    "typescript": "^5.0.4",
+    "winston": "^3.8.2"
+  }
+}
