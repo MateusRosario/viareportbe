@@ -15,7 +15,7 @@ export function BuidWhereByModel(model) {
 
 
     if (value !== undefined && value != null) {
-      console.log(`Nome: ${name} \nValor: ${value} \nTipo: ${_type["name"]}`)      
+      // console.log(`Nome: ${name} \nValor: ${value} \nTipo: ${_type["name"]}`)      
       try {
         if (isValid(element.referencedColumn)) {
           retorno[name] = BuidWhereByModel(value);

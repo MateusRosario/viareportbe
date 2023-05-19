@@ -25,6 +25,10 @@ export class Page<T>{
      * @param numero da pagina exemplo pagina = 5 (offset: pagina*size, limit: size)
      */
     number: number;
+     /**
+     * @param lengthContent número de registros no array content
+     */
+      contentLength: number;
     /**
      * @param direcao and fields
      */

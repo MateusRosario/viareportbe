@@ -16,7 +16,7 @@ export class Venda extends BaseEntity {
   data_emissao: Date;
   @Column()
   hora: string;
-  @Column()
+  @Column({name: "data_saida"})
   data_saida: Date;
   @Column()
   gerado: string;

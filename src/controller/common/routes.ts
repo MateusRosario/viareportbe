@@ -1,9 +1,10 @@
-import { ComissaoRoute } from './../ComissaoController';
+import { ComissaoRoute } from '../comissao-controller';
 import { Router } from "express";
-import ProdutoRoute from "../ProdutoController";
-import { RegistroRoute } from "../RegistroController";
-import VendaRoute from "../VendaController";
-import VendaItemRoute from "../VendaItemController";
+import ProdutoRoute from "../produtos-controller";
+import { RegistroRoute } from "../registro-controller";
+import VendaRoute from "../venda-controller";
+import VendaItemRoute from "../venda-item-controller";
+import gestaoVendedoresRouter from '../gestao-vendedores-controller';
 /**
  * @description aqui é o arquivo que vai exportar todas as rotas que possuem ou não sub-rotas seria por exemplo o inicio / da aplicação
  */
@@ -15,6 +16,7 @@ routes.use('/produto', ProdutoRoute);
 routes.use('/venda', VendaRoute);
 routes.use('/venda_item', VendaItemRoute);
 routes.use("/comissao", ComissaoRoute);
+routes.use("/gestao-vendedores", gestaoVendedoresRouter)
 
 
 

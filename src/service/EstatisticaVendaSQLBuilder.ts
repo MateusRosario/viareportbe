@@ -1,10 +1,10 @@
 import { VendaItem } from "./../model/entity/VendaItem";
 import { Venda } from "./../model/entity/Venda";
 import { AppDataSource } from "./../data-source";
-import { Between } from "typeorm";
+import { Any, Between, ViewColumn, ViewEntity } from "typeorm";
+import { query } from "express";
 export class EstatisticaVendaSQLBuilder {
-     
-  GroupByVendedor(aDataInicio: Date, aDataFim: Date): string {
+  getGroupByVendedorSQL(aDataInicio: Date, aDataFim: Date): string {
     let retorno;
 
     let queryBuilder = AppDataSource.createQueryBuilder();
@@ -26,16 +26,63 @@ export class EstatisticaVendaSQLBuilder {
       .groupBy("vend.id, vend.nome")
       .orderBy({ "SUM ( CASE WHEN v.cancelada = 'NAO' AND vi.cancelada = 'NAO' THEN vi.vl_total ELSE 0.00 END )": "DESC" });
 
-     retorno = queryBuilder.getQuery();
+    retorno = queryBuilder.getQuery();
 
     return retorno;
   }
+
+ getVendaCanceladaSQL(aDataInicio: Date, aDataFim: Date, aIdVendedor?: number, aListagemById: Boolean = false): Promise<[VendaCanceladaViewm[], number]> {
+    let queryBuilder = AppDataSource.createQueryBuilder<VendaCanceladaViewm>(VendaCanceladaViewm, "v");
+    aListagemById
+      ? queryBuilder.select("id")
+      : queryBuilder.select(`SUM ( vl_produto )::numeric(14,2) AS produto_valor_bruto,
+    SUM ( vl_servico )::numeric(14,2) AS servico_valor_bruto,
+    SUM ( vl_desconto )::numeric(14,2) AS desconto,
+    SUM ( vl_total )::numeric(14,2) AS liquido`);
+    queryBuilder.where("data_cancelamento = :data", {data: Between(aDataInicio, aDataFim)})
+    
+    if ((aIdVendedor || 0) > 0) {
+      queryBuilder.andWhere("id_vendedor = :id_vendedor", {id_vendedor: aIdVendedor})  
+    }
+
+    return queryBuilder.getManyAndCount();
+  }
 }
 
-export class GroupByVendedorReturnRow {
-    id: number;
-    nome: string;
-    bruto: number;
-    desconto: number;
-    item_cancelado: number;
+export class GroupByVendedorValues {
+  id: number;
+  nome: string;
+  bruto: number;
+  desconto: number;
+  item_cancelado: number;
+}
+@ViewEntity({
+  materialized: true,
+  expression: `SELECT venda.id,
+venda.data_cancelamento,
+venda.id_vendedor,
+venda.vl_produto,
+venda.vl_servico,
+venda.vl_desconto,
+venda.vl_total
+FROM venda
+WHERE ((NOT venda.nf_uniao) AND ((venda.gerado)::text = 'SIM'::text) AND ((venda.cancelada)::text = 'SIM'::text))
+ORDER BY venda.data_cancelamento`})
+export class VendaCanceladaViewm {
+  @ViewColumn()
+  id: number;
+  @ViewColumn()
+  data_cancelamento: Date;
+  @ViewColumn()
+  id_vendedor: number;
+  @ViewColumn()
+  vl_produto: number;
+  @ViewColumn()
+  vl_servico: number;
+  @ViewColumn()
+  vl_desconto: number;
+  @ViewColumn()
+  vl_total: number;
+
+
 }

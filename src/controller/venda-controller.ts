@@ -1,6 +1,6 @@
-import { PageService } from "./../service/PageService";
+import { PageService } from "../service/PageService";
 import { Response, Router } from "express";
-import { Venda } from "./../model/entity/Venda";
+import { Venda } from "../model/entity/Venda";
 import { BuildRote, Controller, getByModel, TypedRequestBody } from "./common/ControllerBase";
 
 export class VendaController implements Controller<Venda> {
