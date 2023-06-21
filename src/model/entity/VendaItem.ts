@@ -47,6 +47,17 @@ export class VendaItem extends BaseEntity {
   vl_custo: number;
   @Column({type: "numeric"})
   qtd_caixa: number;
+
+  headerCVS(): string {
+    return 'ID;ID VENDA;ID PRODUTO;NOME PRODUTO;QUANTIDADE;VL UNITARIO;VL DESCONTO;VL TOTAL';
+  }
+  toCSV(){
+    let retorno = "";
+
+    retorno = this.id + ";" + this.id_venda.id + ";" + this.id_produto.id + ";" + this.nome_produto + ";" + this.quantidade + ";" + this.vl_unitario  + ";" + this.vl_desconto + ";" + this.vl_total;
+
+    return retorno;
+  }
 }
 
 

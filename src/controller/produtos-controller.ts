@@ -6,7 +6,7 @@ import { PageService } from '../service/PageService';
 
 export class ProdutoController implements Controller<Produto> {
     getByModel(req: TypedRequestBody<Produto>, res: Response<any, Record<string, any>>, next: any) {
-        return getByModel(req, res, next, new PageService<Produto>(new Produto()));
+        return getByModel(req, res, next, new PageService<Produto>(new Produto(), req.headers["cnpj"] as string));
         
     }
     getByQuery(req: TypedRequestBody<{ query: string; countQuery: string; }>, res: Response<any, Record<string, any>>, next: any) {

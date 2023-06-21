@@ -1,13 +1,13 @@
 import { VendaItem } from "./../model/entity/VendaItem";
 import { Venda } from "./../model/entity/Venda";
-import { AppDataSource } from "./../data-source";
-import { Any, Between, ViewColumn, ViewEntity } from "typeorm";
-import { query } from "express";
+import { getConnection } from "../data-source";
+import { Between, ViewColumn, ViewEntity } from "typeorm";
+import { VendaCanceladaViewm } from "../model/entity/venda-cancelada-viewm";
 export class EstatisticaVendaSQLBuilder {
   getGroupByVendedorSQL(aDataInicio: Date, aDataFim: Date): string {
     let retorno;
 
-    let queryBuilder = AppDataSource.createQueryBuilder();
+    let queryBuilder = getConnection("32.310.156/0001-65").createQueryBuilder();
 
     queryBuilder
       .select(
@@ -31,8 +31,8 @@ export class EstatisticaVendaSQLBuilder {
     return retorno;
   }
 
- getVendaCanceladaSQL(aDataInicio: Date, aDataFim: Date, aIdVendedor?: number, aListagemById: Boolean = false): Promise<[VendaCanceladaViewm[], number]> {
-    let queryBuilder = AppDataSource.createQueryBuilder<VendaCanceladaViewm>(VendaCanceladaViewm, "v");
+ getVendaCanceladaSQL( cnpj ,aDataInicio: Date, aDataFim: Date, aIdVendedor?: number, aListagemById: Boolean = false): Promise<[VendaCanceladaViewm[], number]> {
+    let queryBuilder = getConnection(cnpj).createQueryBuilder<VendaCanceladaViewm>(VendaCanceladaViewm, "v");
     aListagemById
       ? queryBuilder.select("id")
       : queryBuilder.select(`SUM ( vl_produto )::numeric(14,2) AS produto_valor_bruto,
@@ -55,34 +55,4 @@ export class GroupByVendedorValues {
   bruto: number;
   desconto: number;
   item_cancelado: number;
-}
-@ViewEntity({
-  materialized: true,
-  expression: `SELECT venda.id,
-venda.data_cancelamento,
-venda.id_vendedor,
-venda.vl_produto,
-venda.vl_servico,
-venda.vl_desconto,
-venda.vl_total
-FROM venda
-WHERE ((NOT venda.nf_uniao) AND ((venda.gerado)::text = 'SIM'::text) AND ((venda.cancelada)::text = 'SIM'::text))
-ORDER BY venda.data_cancelamento`})
-export class VendaCanceladaViewm {
-  @ViewColumn()
-  id: number;
-  @ViewColumn()
-  data_cancelamento: Date;
-  @ViewColumn()
-  id_vendedor: number;
-  @ViewColumn()
-  vl_produto: number;
-  @ViewColumn()
-  vl_servico: number;
-  @ViewColumn()
-  vl_desconto: number;
-  @ViewColumn()
-  vl_total: number;
-
-
 }

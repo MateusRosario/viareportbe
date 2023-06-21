@@ -5,7 +5,7 @@ import { PageService } from '../service/PageService';
 
 export class RegistroController implements Controller<registro> {
     getByModel(req: TypedRequestBody<registro>, res: Response, next: any) {
-        return getByModel(req, res, next, new PageService(new registro()));
+        return getByModel(req, res, next, new PageService(new registro(), req.headers["cnpj"] as string));
     }
 
     getByQuery(req: TypedRequestBody<{ query: string; countQuery: string; }>, res: Response<any, Record<string, any>>, next: any) {

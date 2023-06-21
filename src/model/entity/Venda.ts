@@ -1,9 +1,11 @@
+import { DevolucaoVendaViewm } from './devolucao-venda-viewm';
 import { FormaPagamento } from './FormaPagamento';
 import { Cliente } from './Cliente';
 import { Vendedor } from './Vendedor';
-import { ByteLengthQueuingStrategy } from "stream/web";
-import { BaseEntity, Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { BaseEntity, Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import { Usuarios } from './Usuarios';
+import { VendaCanceladaViewm } from './venda-cancelada-viewm';
+import { DateTimezoneTransformer } from '../apoio/date-timezone-transformer';
 
 @Entity({name: "venda"})
 export class Venda extends BaseEntity {
@@ -12,12 +14,12 @@ export class Venda extends BaseEntity {
   id: number;
   @Column()
   id_empresa: number;
-  @Column()
+  @Column({type: "date", name: "data_emissao", transformer: new DateTimezoneTransformer()})
   data_emissao: Date;
   @Column()
   hora: string;
-  @Column({name: "data_saida"})
-  data_saida: Date;
+  @Column({type: "date", name: "data_saida"})
+  data_saida: Date | {inicio: Date, fim: Date};
   @Column()
   gerado: string;
 
@@ -62,7 +64,9 @@ export class Venda extends BaseEntity {
   reativacao: Boolean;
   @Column()
   romaneio: string;
-  @Column()
-  data_cancelamento: Date;
-
+  @Column({type: "timestamp"})
+  data_cancelamento: Date | {inicio: Date, fim: Date};
+  @Column({default: false})
+  nf_uniao: boolean;
+  
 }

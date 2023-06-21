@@ -9,7 +9,7 @@ export class VendaController implements Controller<Venda> {
   }
 
   getByModel(req: TypedRequestBody<Venda>, res: Response<any, Record<string, any>>, next: any) {
-    getByModel(req, res, next, new PageService<Venda>(new Venda()));
+    getByModel(req, res, next, new PageService<Venda>(new Venda(), req.headers["cnpj"] as string));
   }
 
  

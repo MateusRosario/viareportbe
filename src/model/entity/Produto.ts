@@ -15,26 +15,26 @@ import {
 export class Produto extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
-  @Column()
+  @Column({type: "character varying", length: 120})
   nome: string;
   @ManyToOne(() => GrupoProduto, (grupo) => grupo.id, { eager: true })
   @JoinColumn({name: "id_grupo", referencedColumnName: "id"})
   id_grupo: GrupoProduto;
-  @Column()
+  @Column({type: "character varying", length: 5, default: "UN"})
   unidade: string;
-  @Column()
+  @Column({type: "numeric", precision: 14, scale: 2})
   preco_custo: number;
-  @Column()
+  @Column({type: "numeric", precision: 14, scale: 2})
   preco_compra: number;
-  @Column()
+  @Column({type: "numeric", precision: 14, scale: 2})
   preco_venda: number;
-  @Column()
+  @Column({type: "numeric", precision: 14, scale: 3})
   estoque_atual: number;
   @Column()
   ativo: string;
   @Column()
   gera_comissao: Boolean;
-  @Column()
+  @Column( {type: "numeric", precision: 14, scale: 2})
   comissao: number;
 
 }

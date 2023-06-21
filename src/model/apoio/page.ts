@@ -1,4 +1,6 @@
-import { AppDataSource } from "../../data-source";
+import { Decimal } from 'decimal.js';
+import { getConnection } from "../../data-source";
+import { somaVT } from '../../Helpers/ArithmeticOperators';
 import { isValid } from "../../service/FunctionsServices";
 
 class test<T>{
@@ -39,12 +41,24 @@ export class Page<T>{
      * @returns se a proxima pagina estiver dentro do range de paginas mossiveis retorna true;
      */
     public hasMorePages(): boolean {
-        if (isValid(this.length) && isValid(this.size) && isValid(this.number)) {
-            let pages = this.length / this.size;
-            pages -= 1 //pois inicia-se em 0;
-            return (!isFinite(pages) && !Math.floor(pages) ? Math.trunc(pages) + 1 : pages) >= this.number + 1;
-        }
-        return false;
+        let temMaisPaginas = false;
+        let paginaAtual = this.number;
+        let totalDeRegistros = this.length;
+        let registrosPorPagina = this.size;
+        if (this.length > 0.00) {
+            let quantidadeDePaginas = Decimal.div(new Decimal(totalDeRegistros), new Decimal(registrosPorPagina)).ceil().toNumber();
+            temMaisPaginas = (paginaAtual < (quantidadeDePaginas - 1));
+        }     
+
+        // console.log(`\n=========================
+        // let paginaAtual = ${this.number};
+        // let totalDeRegistros = ${this.length};
+        // let registrosPorPagina = ${this.size};
+        // let quantidadeDePaginas = ${Decimal.div(new Decimal(totalDeRegistros), new Decimal(registrosPorPagina)).ceil().toNumber()}`)
+
+        
+
+        return temMaisPaginas;
     }
     /**
      * @returns uma nova pagina apenas se for possivel, caso não seja retorna a mesma pagina atual
@@ -92,7 +106,7 @@ export class Page<T>{
     public createDefaultSort(model: T):void {
         try{
             let aux = '';            
-            let columns  = AppDataSource.getMetadata(model.constructor.name).primaryColumns;
+            let columns  = getConnection("32.310.156/0001-65").getMetadata(model.constructor.name).primaryColumns;
             for (let i = 0; i < columns.length; i++) {
                 const element = columns[i];
                 aux += element.propertyName+','

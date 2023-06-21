@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="pt" style="width: 100vw;">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatório de Comissões</title>
+
+    <script src="https://code.jquery.com/jquery-3.7.0.slim.js"
+        integrity="sha256-7GO+jepT9gJe9LB4XFf8snVOjX3iYNb0FHYr5LI1N5c=" crossorigin="anonymous"></script>
+
+    <script>
+        const formatter = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+
+        const cnpjempresa = `<%=cnpj %>`;
+        console.log(cnpjempresa);
+
+        let datainicio;
+        let datafim;
+        let selectvendedor;
+        let pesquisando = false;
+
+        const myheaders = new Headers();
+
+        myheaders.append("cnpj", cnpjempresa);
+        myheaders.append("Content-Type", "application/json");
+
+
+
+        class Empresa {
+            constructor() {
+                this.id = null;
+                this.cnpj = null;
+                this.nome = null;
+                this.razao_social = null;
+                this.endereco = null;
+                this.cep = null;
+                this.bairro = null;
+                this.cidade = null;
+                this.uf = null;
+            }
+        }
+
+        let _empresa = new Empresa();
+
+
+        let page = 0;
+
+        async function filtrarItens(todasAsPaginas = false) {
+
+            console.log(`http://127.0.0.1:8181/v1/comissao/get_comissao_por_item?dataInicio=${formatDateToAPI(datainicio.val(), 0, 1)}&dataFim=${formatDateToAPI(datafim.val(), 19, 59)}&idVendedor=${parseInt(selectvendedor.val())}&numberPage=${page}`)
+
+            await fetch(`http://127.0.0.1:8181/v1/comissao/get_comissao_por_item?dataInicio=${formatDateToAPI(datainicio.val(), 5, 1)}&dataFim=${formatDateToAPI(datafim.val(), 19, 59)}&idVendedor=${parseInt(selectvendedor.val())}&numberPage=${page}${todasAsPaginas ? "&todasAsPaginas=true" : ""}`, {
+                method: "GET",
+                headers: myheaders,
+                // body: JSON.stringify({
+                //     "id_venda": {
+                //         "data_saida": {
+                //             "inicio": datainicio.val(),
+                //             "fim": datafim.val()
+                //         },
+                //         "gerado": "SIM",
+                //         "id_vendedor": {
+                //             "id": parseInt(selectvendedor.val())
+                //         }
+                //     },
+                //     "pageInfo": {
+                //         "size": 100,
+                //         "page": page
+                //     }
+                // })
+            }).then(async response => {
+                await response.json().then((data) => {
+
+                    let tableBody = $("#table-dados");
+
+                    if (page === 0) tableBody.empty();
+
+                    for (let index = 0; index < data.content.length; index++) {
+                        const valor = data.content[index];
+                        tableBody.append(
+                            $(`<tr class="table-row">`)
+                                .append(`<td style="width: 40px">${valor.id_venda}</td>`)
+                                .append(`<td style="width: 70px; text-align: center">${formatarDate(valor.data_saida)}</td>`)
+                                .append(`<td  style="width: 300px">( ${valor.id_produto} ) ${valor.nome_produto}</td>`)
+                                .append(`<td style="width: 80px">${valor.comissao_indice}</td>`)
+                                .append(`<td style="width: 15px">${parseFloat(valor.comissao_percentual).toFixed(2)}</td>`)
+                                .append(`<td style="text-align: right; padding-right: 5px;">${formatter.format(valor.comissao_valor)}</td>`)
+                        );
+                    }
+
+                    console.log("TERMINOU DE RENDERIZAR OS ITENS");
+
+
+
+
+                })
+            })
+
+        }
+
+        async function filtrarResumo() {
+
+
+            await fetch(`http://127.0.0.1:8181/v1/comissao/get_comissao_group_by_indice?dataInicio=${formatDateToAPI(datainicio.val(), 5, 1)}&dataFim=${formatDateToAPI(datafim.val(), 19, 59)}&idVendedor=${parseInt(selectvendedor.val())}`, {
+                method: "GET",
+                headers: myheaders,
+                // body: JSON.stringify({
+                //     "id_venda": {
+                //         "data_saida": {
+                //             "inicio": datainicio.val(),
+                //             "fim": datafim.val()
+                //         },
+                //         "gerado": "SIM",
+                //         "id_vendedor": {
+                //             "id": parseInt(selectvendedor.val())
+                //         }
+                //     },
+                //     "pageInfo": {
+                //         "size": 100,
+                //         "page": page
+                //     }
+                // })
+            }).then(async response => {
+                await response.json().then((data) => {
+
+                    let tableBody = $("#table-dados-resumo");
+
+                    if (page === 0) tableBody.empty();
+
+                    let totalVendas = 0.00;
+                    let totalComissao = 0.00
+
+                    if (data instanceof Array) {
+                        for (let index = 0; index < data.length; index++) {
+                            const valor = data[index];
+                            tableBody.append(
+                                $(`<tr class="table-row">`)
+                                    .append(`<td style="width: 40px">${valor.descricaoDoIndice}</td>`)
+                                    .append(`<td style="text-align: right; padding-right: 5px; width: 25px;">${formatter.format(valor.total)}</td>`)
+                                    .append(`<td style="text-align: right; padding-right: 5px; width: 25px;">${parseFloat(valor.percentual).toFixed(2)}</td>`)
+                                    .append(`<td style="text-align: right; padding-right: 5px; width: 25px;">${formatter.format(valor.comissao)}</td>`)
+                            );
+
+                            totalVendas += valor.total;
+                            totalComissao += valor.comissao;
+                        }
+                    }
+
+                    $("tfoot")?.remove();
+
+                    tableBody.after($('<tfoot>').append(`<th scope="row">Total</th><td>${formatter.format(totalVendas)}</td><td></td><td>${formatter.format(totalComissao)}</td>`))
+
+
+                },
+                    (erro) => {
+                        let tableBody = $("#table-dados-resumo");
+
+                        tableBody.empty();
+
+                    })
+            })
+
+
+        }
+
+        async function filtrar(todasAsPaginas = false) {
+
+            if (!pesquisando) {
+
+                $('.container-table').attr("hidden", "true");
+
+                $('#container-loader').removeAttr("hidden");
+
+                pesquisando = true;
+
+                let itens = filtrarItens(todasAsPaginas);
+                let resumo = filtrarResumo();
+
+                await Promise.all([itens, resumo]).then(v => {
+                    console.log("RESOLVEU filtrarItens, filtrarResumo");
+                    pesquisando = false;
+
+                    $('.container-table').removeAttr("hidden");
+
+                    $('#container-loader').attr("hidden", "true");
+                });
+
+            }
+
+
+
+        };
+
+        function formatDateToAPI(date, hour, minute) {
+            let _date = new Date(date);
+            _date.setUTCHours(hour, minute);
+
+            return _date.toISOString();
+        }
+
+
+
+        formatarDate = (datestring) => {
+            let _array = datestring.split('T')[0].split('-');
+            let retorno = _array[2] + '/' + _array[1] + '/' + _array[0];
+            return datestring;
+            // return date.toLocaleDateString();
+        }
+
+        setTimeout(async () => {
+            let primaryday = new Date();
+            let lastday = new Date();
+
+
+
+            primaryday.setFullYear(primaryday.getFullYear(), primaryday.getMonth(), 1);
+            lastday.setFullYear(lastday.getFullYear(), lastday.getMonth() + 1, 0);
+
+            datainicio = $("#iniciodata");
+            datainicio.val(primaryday.toISOString().split("T")[0]);
+            
+
+            datafim = $("#fimdata");
+            datafim.val(lastday.toISOString().split("T")[0]);
+            
+
+            selectvendedor = $("#vendedor");
+
+            $("#btnImpressao").on("click", async (event) => {
+                page = 0;
+
+                let nome_empresa = $("#nome-empresa");
+                nome_empresa.empty();
+                let nome_vendedor = $("#nome-vendedor");
+                nome_vendedor.empty();
+                let date_inicio_header = $("#date-inicio-header");
+                date_inicio_header.empty();
+                let date_fim_header = $("#date-fim-header");
+                date_fim_header.empty();
+
+                console.log(_empresa.nome, " / ", selectvendedor.html(), " / ", datainicio.val(), " / ", datafim.val());
+
+                console.log(selectvendedor);
+
+
+                nome_empresa.append(_empresa.nome);
+                nome_vendedor.append(selectvendedor.find(":selected").text());
+                date_inicio_header.append(datainicio.val());
+                date_fim_header.append(datafim.val());
+
+                await filtrar(true).then(value => {
+                    window.print();
+                });
+
+
+            })
+
+            $("#btnfiltrar").on("click", (event) => {
+                page = 0;
+
+                let nome_empresa = $("#nome-empresa");
+                nome_empresa.empty();
+                let nome_vendedor = $("#nome-vendedor");
+                nome_vendedor.empty();
+                let date_inicio_header = $("#date-inicio-header");
+                date_inicio_header.empty();
+                let date_fim_header = $("#date-fim-header");
+                date_fim_header.empty();
+
+
+                nome_empresa.append(_empresa.nome);
+                nome_vendedor.append(selectvendedor.find(":selected").text());
+                date_inicio_header.append(new Date(datainicio.val()).toLocaleDateString());
+                date_fim_header.append(new Date(datafim.val()).toLocaleDateString());
+
+                filtrar();
+            })
+
+
+            await fetch(`http://127.0.0.1:8181/v1/empresa/get_by_model`, {
+                method: "POST",
+                headers: myheaders,
+                body: JSON.stringify({
+                    "id": 1,
+                })
+            }).then(response => {
+                response.json().then(value => {
+                    _empresa = value.content[0];
+                    console.log(_empresa);
+                });
+            },
+                erro => {
+                    alert("Não foi possível buscar os dados da empresa. Não será possível filtrar as informações. Erro: ", erro["message"]);
+                })
+
+
+            $(document).ready(function () {
+                $("#container-table-body").on("scroll", (event) => {
+                    if (event.target.scrollTop + event.target.clientHeight >= event.target.scrollHeight && !pesquisando) {
+                        console.log("VAI BUSCAR");
+                        console.log("ANTES DA BUSCA PAGE: ", page)
+                        page = page + 1;
+                        filtrarItens();
+                        console.log("DEPOIS DA BUSCA PAGE: ", page)
+                    }
+                });
+            });
+
+
+
+
+        }, 100);
+
+        fetch("http://127.0.0.1:8181/v1/vendedor/get_by_model", {
+            method: "POST",
+            headers: myheaders,
+            body: JSON.stringify({
+                "ativo": "SIM",
+                "pageInfo": {
+                    "size": 1000,
+                    "page": 0
+                }
+            })
+        }).then(response => {
+            response.json().then((data) => {
+                for (var index = 0; index < data.length; index++) {
+                    $("#vendedor").append('<option value="' + data.content[index].id + '">' + data.content[index].nome + '</option>');
+                }
+            })
+        })
+
+    </script>
+
+    <style media="print">
+        .container {
+            font-size: 0.5rem;
+        }
+
+        form {
+            display: none;
+        }
+
+        tbody,
+        tfoot {
+            font-size: 0.5rem;
+        }
+
+        #container-table-body,
+        #container-table-body-resumo {
+            height: 100%;
+            overflow-x: scroll;
+        }
+
+        #report-header {
+            border: black 1px solid;
+            padding: 5px;
+            display: block;
+        }
+
+        .div-label {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .label-header {
+            padding: 0 5px;
+            font-weight: bold;
+
+        }
+
+        .nome-empresa {
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 0 5px;
+            margin: 0 0 5px 0;
+        }
+
+        .titulo-relatorio {
+            padding: 5px;
+            font-size: 1rem;
+        }
+
+        @page {
+            size: landscape;
+            margin: 0;
+            margin-top: 5mm;
+            margin-bottom: 5mm;
+            margin-right: 10mm;
+            margin-left: 10mm;
+        }
+    </style>
+
+    <style>
+        * {
+            font-family: Roboto, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+
+        form {
+            margin-top: 10px;
+            padding: 15px;
+            height: 40px;
+            border-radius: 5px;
+            box-shadow: 0px 0px 4px 6px #dbdbdb;
+            text-transform: capitalize;
+        }
+
+        label {
+            margin-left: 10px;
+            border: none;
+            box-sizing: border-box;
+            padding: 5px 5px;
+            background-color: darkcyan;
+            border-radius: 5px 0 0 5px;
+            color: #ffffff;
+            font-weight: bold;
+            margin-bottom: 0px
+        }
+
+        input {
+            margin-left: 0;
+            padding: 5px 0;
+        }
+
+        select {
+            padding: 5px;
+        }
+
+        form button {
+            border: none;
+            padding: 5px;
+            background-color: black;
+            color: white;
+            margin-left: 20px;
+            margin-right: 0;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        form button:hover {
+            background-color: rgb(136, 136, 136);
+            color: black;
+
+
+        }
+
+        tbody {
+            font-size: 0.8rem;
+        }
+
+        tfoot {
+            font-size: 1rem;
+            background-color: black;
+            color: white;
+        }
+
+        tfoot th {
+            text-align: left;
+            padding: 5px;
+        }
+
+        tfoot td {
+            text-align: right;
+            padding: 5px;
+        }
+
+        table {
+            /* table-layout: fixed; */
+            width: 97%;
+            border-spacing: 0;
+            /* Removes the cell spacing via CSS */
+            border-collapse: collapse;
+            /* Optional - if you don't want to have double border where cells touch */
+        }
+
+        #table-resumo {
+            width: 50%;
+        }
+
+        thead tr {
+            background-color: #a6adb5;
+            border-top: 3px solid black;
+            border-bottom: 3px solid black;
+
+        }
+
+
+        tbody tr:nth-child(odd) {
+            background-color: rgb(187, 187, 187);
+        }
+
+        .table-row {
+            font-size: 0.7rem;
+        }
+
+        .table-row:hover {
+            background-color: rgb(53, 82, 121);
+            color: white;
+            font-weight: bold;
+        }
+
+
+        tr {
+            white-space: nowrap;
+        }
+
+        thead tr {
+            position: sticky;
+            top: 0;
+            font-size: 0.9rem;
+        }
+
+        .container-table-body-resumo {
+            height: 30vh;
+
+        }
+
+        .container-table-body {
+            height: 60vh;
+
+        }
+
+        .container-table-body-resumo,
+        .container-table-body {
+            overflow-x: auto;
+            margin-top: 5px;
+        }
+
+        .report-header {
+            display: none;
+        }
+
+        .titulo-sessao {
+            padding: 5px;
+            font-weight: bold;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.8rem;
+            border: solid 1px black;
+        }
+
+        .loader {
+            margin: 200px auto;
+            border: 16px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 16px solid #3498db;
+            width: 120px;
+            height: 120px;
+            -webkit-animation: spin 2s linear infinite;
+            /* Safari */
+            animation: spin 2s linear infinite;
+        }
+
+        /* Safari */
+        @-webkit-keyframes spin {
+            0% {
+                -webkit-transform: rotate(0deg);
+            }
+
+            100% {
+                -webkit-transform: rotate(360deg);
+            }
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+
+
+</head>
+
+<body style="width: 98vw; margin: auto;">
+    <div class="container">
+        <form>
+            <label for="iniciodata">início</label>
+            <input id="iniciodata" lang="pt-BR" type="date">
+
+            <label for="fimdata">fim</label>
+            <input id="fimdata" lang="pt-BR" type="date">
+
+            <label for="vendedor">vendedor</label>
+            <select id="vendedor">
+            </select>
+
+            <button type='button' id="btnfiltrar">FILTRAR</button>
+            <button type='button' id="btnImpressao">IMPRESSÃO</button>
+        </form>
+        <div hidden id="container-loader" class="row">
+            <div class="loader"></div>
+        </div>
+        <section id="report-header" class="report-header">
+            <div id="nome-empresa" class="nome-empresa"></div>
+            <div class="titulo-relatorio">RELATÓRIO DE COMISSÕES</div>
+            <div class="div-label">
+                <div class="label-header">VENDEDOR:</div>
+                <div id="nome-vendedor"></div>
+
+                <div id="periodo-container" class="div-label">
+                    <div class="label-header">PERÍODO:</div>
+                    <div id="date-inicio-header" class="date"></div>
+                    <div>-</div>
+                    <div id="date-fim-header" class="date"></div>
+                </div>
+            </div>
+        </section>
+        <div id="container-table-body-resumo" class="container-table-body-resumo container-table">
+            <div class="titulo-sessao">RESUMO</div>
+            <table id="table-resumo">
+                <thead>
+                    <tr>
+                        <th scope="col">Indíce</th>
+                        <th scope="col">Total</th>
+                        <th scope="col">Percentual</th>
+                        <th scope="col">Comissão</th>
+                    </tr>
+                </thead>
+                <tbody id="table-dados-resumo">
+
+                </tbody>
+
+
+            </table>
+        </div>
+        <div id="container-table-body" class="container-table-body container-table">
+            <div class="titulo-sessao">LISTAGEM</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th scope="col">Cód</th>
+                        <th scope="col">Data</th>
+                        <th scope="col">Produto</th>
+                        <!-- <th scope="col">Vendedor</th> -->
+                        <th scope="col">Condição</th>
+                        <th scope="col">%</th>
+                        <th scope="col">Comissão</th>
+                    </tr>
+                </thead>
+                <tbody id="table-dados">
+
+                </tbody>
+
+
+            </table>
+        </div>
+    </div>
+</body>
+
+</html>

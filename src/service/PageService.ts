@@ -1,8 +1,8 @@
 import { Page as Page } from './../model/apoio/page';
 import { BaseEntity, Repository } from "typeorm";
-import { AppDataSource } from "../data-source";
 import { BuidWhereByModel } from '../repository/common/QueryUtils';
 import { isValid } from './FunctionsServices';
+import { getConnection } from '../data-source';
 /**
  * @param S repositorio do banco de dados
  * @param T entidade a qual refere-se o repositório
@@ -10,8 +10,8 @@ import { isValid } from './FunctionsServices';
  */
 export class PageService<T>{
     private repository: Repository<T>;
-    constructor(private model: T){
-        this.repository = AppDataSource.getRepository(this.model.constructor.name);             
+    constructor(private model: T, private cnpj: string){
+        this.repository = getConnection(this.cnpj).getRepository(this.model.constructor.name);             
     }
 
     public async findByExemple(example: T, page?: Page<T>): Promise<Page<T>>{

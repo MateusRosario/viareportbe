@@ -6,7 +6,7 @@ import { BuildRote, Controller, getByModel, TypedRequestBody } from "./common/Co
 
 export class VendaItemController implements Controller<VendaItem> {
   getByModel(req: TypedRequestBody<VendaItem>, res: Response<any, Record<string, any>>, next: any) {
-    getByModel(req, res, next, new PageService<VendaItem>(new VendaItem()));
+    getByModel(req, res, next, new PageService<VendaItem>(new VendaItem(), req.headers["cnpj"] as string));
   }
   getByQuery(req: TypedRequestBody<{ query: string; countQuery: string; numberPage: number }>, res: Response<any, Record<string, any>>, next: any) {
     throw new Error("Method not implemented.");

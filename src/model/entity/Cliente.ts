@@ -1,9 +1,7 @@
 import { BaseEntity, Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity({name: 'clientes'})
-export class Cliente extends BaseEntity {
-  
-  
+export class Cliente extends BaseEntity {  
   @PrimaryGeneratedColumn()
   id: number;
   @Column()
@@ -18,6 +16,4 @@ export class Cliente extends BaseEntity {
   cpf: string;
   @Column()
   ativo: string;
-
-
 }

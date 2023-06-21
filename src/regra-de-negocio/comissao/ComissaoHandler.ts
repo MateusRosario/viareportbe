@@ -1,9 +1,29 @@
+import { FormaPagamento } from './../../model/entity/FormaPagamento';
+import { Any } from 'typeorm';
+import { Vendedor } from './../../model/entity/Vendedor';
+import { Produto } from './../../model/entity/Produto';
 import { VendaItem } from "../../model/entity/VendaItem";
 import { isValid } from "../../service/FunctionsServices";
-import { ComissaoTipo, VendaItemComissao } from "./VendaItemComissao";
+import { ComissaoTipo, VendaStatus, VendaItemComissao } from "./VendaItemComissao";
+
+
+export interface IComissaoAdapter {
+  
+  getId(): number;
+  getIdItem(): number;
+  getProduto(): Produto;
+  getVendedor(): Vendedor;
+  getValorBruto(): number;
+  getValorDesconto(): number;
+  getValorLiquido(): number;
+  getData(): Date;
+  getStatus(): VendaStatus;
+  getFormaPagamento(): FormaPagamento;
+  
+}  
 
 export interface ComissaoHandlerInterface {
-  calcularComissao(item: VendaItem, valorComissao: VendaItemComissao);
+  calcularComissao(item: IComissaoAdapter, valorComissao: VendaItemComissao);
   setNextHandler(handler: ComissaoHandlerInterface): ComissaoHandlerInterface;
 }
 
@@ -15,17 +35,18 @@ export abstract class ComissaoHandlerBase implements ComissaoHandlerInterface {
     return this;
   }
 
-  calcularComissao(item: VendaItem, valorComissao: VendaItemComissao) {
+  calcularComissao(item: IComissaoAdapter, valorComissao: VendaItemComissao) {
     if (!isValid(valorComissao.id)) {
-      valorComissao.id = item.id;
-      valorComissao["data_saida"] = item.id_venda.data_saida;
-      valorComissao.id_venda = item.id_venda.id;
-      valorComissao.id_produto = item.id_produto.id;
-      valorComissao.nome_produto = item.nome_produto;
-      valorComissao.vl_total = item.vl_total;
+      valorComissao.id = item.getIdItem();
+      valorComissao.data_saida = item.getData();
+      valorComissao.id_venda = item.getId();
+      valorComissao.id_produto = item.getProduto().id;
+      valorComissao.nome_produto = item.getProduto().nome;
+      valorComissao.vl_total = item.getValorLiquido();
       valorComissao.comissao_percentual = 0.0;
-      valorComissao.id_vendedor = item.id_venda.id_vendedor.id;
-      valorComissao.nome_vendedor = item.id_venda.id_vendedor.nome;
+      valorComissao.id_vendedor = item.getVendedor().id;
+      valorComissao.nome_vendedor = item.getVendedor().nome;
+      valorComissao.status = item.getStatus();
     }
 
     if (!this.ifHandler(item, valorComissao) && this.handler !== null) {
@@ -33,5 +54,8 @@ export abstract class ComissaoHandlerBase implements ComissaoHandlerInterface {
     }
   }
 
-  protected abstract ifHandler(item: VendaItem, valorComissao: VendaItemComissao): boolean;
+  protected abstract ifHandler(item: IComissaoAdapter, valorComissao: VendaItemComissao): boolean;
 }
+
+
+
