@@ -4,10 +4,10 @@ import { getConnection } from "../data-source";
 import { Between, ViewColumn, ViewEntity } from "typeorm";
 import { VendaCanceladaViewm } from "../model/entity/venda-cancelada-viewm";
 export class EstatisticaVendaSQLBuilder {
-  getGroupByVendedorSQL(aDataInicio: Date, aDataFim: Date): string {
+  getGroupByVendedorSQL(aDataInicio: Date, aDataFim: Date, cnpj: string): string {
     let retorno;
 
-    let queryBuilder = getConnection("32.310.156/0001-65").createQueryBuilder();
+    let queryBuilder = getConnection(cnpj).createQueryBuilder();
 
     queryBuilder
       .select(

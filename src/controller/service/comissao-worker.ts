@@ -114,7 +114,7 @@ export class ComissaoWorker {
       .leftJoinAndSelect("p.id_grupo", "gp")
       .innerJoinAndSelect("v.id_vendedor", "vend")
       .innerJoinAndSelect("v.id_forma", "fp")
-      .where(BuidWhereByModel(getConnection(cnpj).getRepository(VendaItem).create(vendaItem)))
+      .where(BuidWhereByModel(getConnection(cnpj).getRepository(VendaItem).create(vendaItem), cnpj))
       .orderBy("v.data_saida asc, v.id asc, vi.id")
       .offset(pageNormais.getOffset())
       .limit(pageNormais.size);
@@ -169,7 +169,7 @@ export class ComissaoWorker {
       .leftJoinAndSelect("p.id_grupo", "gp")
       .innerJoinAndSelect("v.id_vendedor", "vend")
       .innerJoinAndSelect("v.id_forma", "fp")
-      .where(BuidWhereByModel(getConnection(cnpj).getRepository(VendaItem).create(copyVendaItem)))
+      .where(BuidWhereByModel(getConnection(cnpj).getRepository(VendaItem).create(copyVendaItem), cnpj))
       .orderBy("v.data_saida asc, v.id");
 
     return await sqlVendaCancelada.getManyAndCount().then((value) => {

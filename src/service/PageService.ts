@@ -17,10 +17,10 @@ export class PageService<T>{
     public async findByExemple(example: T, page?: Page<T>): Promise<Page<T>>{
         if(isValid(page)){
             if(! isValid(page.sort)){
-                page.createDefaultSort(this.model);
+                page.createDefaultSort(this.model, this.cnpj);
             }
             if(!isValid(page.length) || page.length == 0){
-                const ret = await this.repository.findAndCount({where: BuidWhereByModel(this.repository.create(example)), skip: page.getOffset(), take: page.size, 
+                const ret = await this.repository.findAndCount({where: BuidWhereByModel(this.repository.create(example), this.cnpj), skip: page.getOffset(), take: page.size, 
                     order: this.getOrder(page)});
                 page.content = ret[0];
                 page.length = ret[1];
@@ -28,12 +28,12 @@ export class PageService<T>{
                 return page;
             }
             
-            page.content = await this.repository.find({where:BuidWhereByModel(this.repository.create(example)), skip: page.getOffset(), take: page.size, order: this.getOrder(page)});
+            page.content = await this.repository.find({where:BuidWhereByModel(this.repository.create(example), this.cnpj), skip: page.getOffset(), take: page.size, order: this.getOrder(page)});
             return page;
         }
         page = Page.CreatePage();
-        page.createDefaultSort(this.model)
-        const ret = await this.repository.findAndCount({where:BuidWhereByModel(this.repository.create(example)), skip: page.getOffset(), take: page.size, order: this.getOrder(page)});
+        page.createDefaultSort(this.model, this.cnpj)
+        const ret = await this.repository.findAndCount({where:BuidWhereByModel(this.repository.create(example), this.cnpj), skip: page.getOffset(), take: page.size, order: this.getOrder(page)});
         page.content = ret[0];
         page.length = ret[1];
 
@@ -46,11 +46,11 @@ export class PageService<T>{
         if(isValid(page)){
             off = `offset ${page.getOffset()} limit ${page.size}`;
             if(isValid(page.sort)){
-                page.createDefaultSort(this.model);
+                page.createDefaultSort(this.model, this.cnpj);
             }           
         }else{
             page = Page.CreatePage<T>();
-            page.createDefaultSort(this.model);
+            page.createDefaultSort(this.model, this.cnpj);
             page.length = await this.repository.query(countQuery).then((c: {count: number}[]) => {
                 return (c[0])['count'];
             }).catch(err=>{throw err})

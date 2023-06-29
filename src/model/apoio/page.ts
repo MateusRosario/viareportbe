@@ -103,10 +103,11 @@ export class Page<T>{
         return retorno;
     }
 
-    public createDefaultSort(model: T):void {
+    public createDefaultSort(model: T, cnpj: string):void {
         try{
-            let aux = '';            
-            let columns  = getConnection("32.310.156/0001-65").getMetadata(model.constructor.name).primaryColumns;
+            let aux = '';       
+               
+            let columns  = getConnection(cnpj).getMetadata(model.constructor.name).primaryColumns;
             for (let i = 0; i < columns.length; i++) {
                 const element = columns[i];
                 aux += element.propertyName+','

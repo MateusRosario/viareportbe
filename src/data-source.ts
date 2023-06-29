@@ -127,18 +127,32 @@ class FactoryConnection {
       throw new Error("As conexões não foram inicializadas. Execute o método initialize(callback)");
     }
     let numeros = cnpj.replace(/[^0-9]/g, "");
-
     let encontrado = -1;
 
-    if (encontrado === -1) {
-      this.configs.forEach((value, index) => {
-        if (value.cnpj.replace(/[^0-9]/g, "") === numeros) {
-          encontrado = index;
-        }
-      });
-    } else {
-      throw new Error("Não foi possível estabelecer a conexão, CNPJ inválido.");
-    }
+    const founded = this.configs.filter((value, index) => {
+      console.log(value.cnpj.replace(/[^0-9]/g, ""), " === ", numeros)
+      if (value.cnpj.replace(/[^0-9]/g, "") === numeros) {
+        encontrado = index;
+        return value;
+      }
+    } )
+
+    // let encontrado = -1;
+
+    // if (encontrado === -1) {
+    //   this.configs.forEach((value, index) => {
+    //     if (value.cnpj.replace(/[^0-9]/g, "") === numeros) {
+    //       encontrado = index;
+    //     }
+    //   });
+    // } else {
+    //   throw new Error("Não foi possível estabelecer a conexão, CNPJ inválido.");
+    // }
+
+    if (founded.length === 0) throw new Error("Não foi possível estabelecer a conexão, CNPJ inválido.");
+
+    console.log("CONEXÃO ENCONTRADA: ", founded[0].host, ':', founded[0].port, '/', founded[0].database);
+    
     return this.connections[encontrado];
   }
 }
@@ -160,7 +174,7 @@ export function initDataSource() {
 export function resyncDataSource() {
   initDataSource();
   factoryDataSource().initialize(()=> {
-    
+
   }); 
 }
 

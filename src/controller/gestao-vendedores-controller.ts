@@ -21,7 +21,7 @@ export class GestaoVendedoresController {
 
       const builder = new EstatisticaVendaSQLBuilder();
 
-      let query = builder.getGroupByVendedorSQL(aDataInicio, aDataFim);
+      let query = builder.getGroupByVendedorSQL(aDataInicio, aDataFim, req.headers["cnpj"] as string);
       const exe1 = getConnection(req.headers["cnpj"] as string).query("REFRESH MATERIALIZED VIEW  public.devolucao_venda_viewm;");
       const exe2 = getConnection(req.headers["cnpj"] as string).query("REFRESH MATERIALIZED VIEW  public.venda_cancelada_viewm;");
       const exe3 = getConnection(req.headers["cnpj"] as string).query("REFRESH MATERIALIZED VIEW  public.venda_duplicata_credito_viewm;");
