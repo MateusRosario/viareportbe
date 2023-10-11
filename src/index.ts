@@ -20,14 +20,15 @@ initReadWritedotEnv();
 
 initDataSource();
 
-factoryDataSource().initialize(() => {  
+factoryDataSource().initialize(() => {
   console.log("Iniciou")
   app.use(express.json());
   app.use(cors());
   app.use(morgan("combined", { stream: winston.stream }));
-  const path = require('path');  
+  const path = require('path');
+
   app.set('view engine', 'ejs');
-  app.set('views',  path.join(__dirname, "views"));
+  app.set('views', path.join(__dirname, "views"));
 
 
   app.use(function (err: httpException, req: Request, res: Response, next) {
@@ -38,11 +39,13 @@ factoryDataSource().initialize(() => {
     if (req.headers["cnpj"]) {
       console.log("cnpj: ", req.headers["cnpj"]);
       return next();
+    } else if (req.query['cnpj']) {
+      console.log("cnpj: ", req.query["cnpj"]);
+      req.headers['cnpj'] = req.query['cnpj'].toString();
+      return next();
     } else {
       next(new Error("Não informou o CNPJ"));
     }
-    
-    
   })
 
 
@@ -52,19 +55,20 @@ factoryDataSource().initialize(() => {
       reloadConnections() ? resyncDataSource() : "";
       res.status(200).send("OK");
     } catch (error) {
-      res.status(500).send("Não foi possível iniciar as conexões ao banco de dados. Erro:" + error["message"]);      
+      res.status(500).send("Não foi possível iniciar as conexões ao banco de dados. Erro:" + error["message"]);
     }
   })
 
   app.get("/close", (req, res) => {
     process.exit(0);
   })
-  
+
 
   app.get("/ping", (req: Request, res: Response, next) => {
     res.status(200).send("OK");
   });
-  app.use("/v1",routes);
+  app.use("/v1", routes);
 
   app.listen(8181);
+
 });
