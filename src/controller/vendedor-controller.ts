@@ -16,8 +16,8 @@ export class VendedorController implements Controller<Vendedor> {
 
     getVendasPorVendedor(req: TypedRequestBody<any>, res: Response, next: any) {
         let data: {
-            inicio: Date,
-            fim: Date
+            inicio: string,
+            fim: string
         } = {
             inicio: undefined,
             fim: undefined
@@ -29,12 +29,13 @@ export class VendedorController implements Controller<Vendedor> {
             return;
         }
 
-        data.inicio = new Date(req.query["dataInicio"] as string);
-        data.fim = new Date(req.query["dataFim"] as string);
+        data.inicio = req.query["dataInicio"] as string;
+        data.fim = req.query["dataFim"] as string;
 
         new VendedorService().getVendasPorVendedor(req.headers['cnpj'] , data).then(response => {
             res.status(200).send(response);
         }).catch(err => {
+            if(err.message === 'Nada Encontrado nessa data!') return res.status(404).send([])
             return next(err)
         })
 

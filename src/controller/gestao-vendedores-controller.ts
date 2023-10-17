@@ -4,6 +4,7 @@ import { EstatisticaVendaSQLBuilder, GroupByVendedorValues } from "../service/Es
 import { TypedRequestBody } from "./common/ControllerBase";
 import { VendedorService } from "./service/VendedorService";
 
+
 export class GestaoVendedoresController {
   // /vendas-group-by-vendedor?dataSaidaInicio=2023-04-01&dataSaidaFim=2023-04-30
   getRowsGroupByVendedor(req: TypedRequestBody<any>, res: Response<any, Record<string, any>>, next: any) {
@@ -50,6 +51,10 @@ gestaoVendedoresRouter.get("/vendas-group-by-vendedor", controller.getRowsGroupB
 gestaoVendedoresRouter.get("/comissao_view", (req, res) => {
   res.render("Comissao", { cnpj: req.headers["cnpj"] });
 });
+
+const locale = Intl.DateTimeFormat().resolvedOptions();
+
+
 gestaoVendedoresRouter.get("/dashbaord", async (req, res) => {
 
   Promise.all([getConnection(req.headers["cnpj"] as string).query("REFRESH MATERIALIZED VIEW  public.devolucao_venda_viewm;")
@@ -57,8 +62,8 @@ gestaoVendedoresRouter.get("/dashbaord", async (req, res) => {
     , getConnection(req.headers["cnpj"] as string).query("REFRESH MATERIALIZED VIEW  public.venda_duplicata_credito_viewm;")]);
 
   let data: {
-    inicio: Date,
-    fim: Date
+    inicio: string,
+    fim: string
   } = {
     inicio: undefined,
     fim: undefined
@@ -69,13 +74,18 @@ gestaoVendedoresRouter.get("/dashbaord", async (req, res) => {
     throw new Error('Data não informada')
   }
 
-  data.inicio = new Date(req.query["dataInicio"] as string);
-  data.fim = new Date(req.query["dataFim"] as string);
+
+  data.inicio = req.query["dataInicio"] as string;
+  data.fim = req.query["dataFim"] as string;
 
   const r = await new VendedorService().getVendasPorVendedor(req.headers["cnpj"], data)
   const f = r[0]
-  res.render('vendedor_dash_board', {values: r, formas: f['formas'], grupos: f['grupo_produto']})
+  res.render('VendedorDashBoard', { values: r })
 });
 
+
+gestaoVendedoresRouter.get('', (req, res) => {
+  res.render('GestaoVendedoresMain', { cnpj: req.headers["cnpj"] as string })
+})
 
 export default gestaoVendedoresRouter;

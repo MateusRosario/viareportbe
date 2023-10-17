@@ -244,6 +244,10 @@ export class ComissaoWorker {
       return itensDevolvidos;
     });
   }
+
+  async  getComissaoNormalTotalizadores(cnpj: string, vendaItem: VendaItem) {
+    
+  }
 }
 
 class ComissaoIndiceDicitionary {
