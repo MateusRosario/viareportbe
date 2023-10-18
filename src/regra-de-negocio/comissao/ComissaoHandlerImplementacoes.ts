@@ -32,7 +32,7 @@ class ComissaoAdapterVendaItem implements IComissaoAdapter {
 
   constructor(private vendaItem: VendaItem, private vendaStatus: VendaStatus) {
     if (!vendaItem) throw new TypeError("ComissaoAdapterVendaItem: Objeto VendaItem não instanciado.");
-    if ((vendaItem.id ?? 0) === 0) throw new TypeError("ComissaoAdapterVendaItem: Objeto VendaItem vazio.");
+    if ((vendaItem.id ? vendaItem.id : 0) === 0) throw new TypeError("ComissaoAdapterVendaItem: Objeto VendaItem vazio.");
     if (!vendaItem.id_produto) throw new TypeError("ComissaoAdapterVendaItem: Objeto VendaItem não possui um produto.") + ` VendaItem (${vendaItem.id})`;
     if (!vendaItem.id_venda) throw new TypeError("ComissaoAdapterVendaItem: Objeto VendaItem não pertence a uma venda." + ` VendaItem (${vendaItem.id})`);
     if (!vendaItem.id_venda.id_vendedor) throw new TypeError("ComissaoAdapterVendaItem: A Venda do Objeto VendaItem não possui um vendedor." + ` Venda (${vendaItem.id_venda.id})`);
@@ -79,7 +79,7 @@ class ComissaoAdapterDevolucaoItem implements IComissaoAdapter {
 
   constructor(private devolucaoItem: DevolucaoItem, private vendaStatus: VendaStatus.DEVOLVIDA) {
     if (!devolucaoItem) throw new TypeError("ComissaoAdapterDevolucaoItem: Objeto DevolucaoItem não instanciado.");
-    if ((devolucaoItem.id ?? 0) === 0) throw new TypeError("ComissaoAdapterDevolucaoItem: Objeto DevolucaoItem vazio.");
+    if ((devolucaoItem.id ? devolucaoItem.id : 0) === 0) throw new TypeError("ComissaoAdapterDevolucaoItem: Objeto DevolucaoItem vazio.");
     if (!devolucaoItem.id_produto) throw new TypeError("ComissaoAdapterDevolucaoItem: Objeto DevolucaoItem não possui um produto.") + ` DevolucaoItem (${devolucaoItem.id})`;
     if (!devolucaoItem.id_devolucao) throw new TypeError("ComissaoAdapterDevolucaoItem: Objeto DevolucaoItem não pertence a uma devolução." + ` DevolucaoItem (${devolucaoItem.id})`);
     if (!devolucaoItem.id_devolucao.id_pedido)

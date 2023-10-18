@@ -7,7 +7,7 @@ import * as dotenv from "dotenv";
 import factoryDataSource, { initDataSource, resyncDataSource } from "./data-source";
 import { initReadWritedotEnv, reloadConnections, syncConfigDataBase } from "./Helpers/WriteReadDotEnv";
 import { encontrarDiretorioViaERP } from "./global";
-
+import ejs = require('ejs');
 
 const app = express();
 const morgan = require("morgan");
@@ -28,6 +28,7 @@ factoryDataSource().initialize(() => {
   const path = require('path');
 
   app.set('view engine', 'ejs');
+  app.engine('ejs', ejs.__express)
   app.set('views', path.join(__dirname, "views"));
 
 

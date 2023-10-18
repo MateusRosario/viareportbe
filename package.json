@@ -7,7 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon --exec ts-node ./src/index.ts",
     "compile": "tsc -build",
-    "build": "pkg -t node14-win ./dist/index.js -o ./build/viareport.exe"
+    "build": "pkg ./package.json"
   },
   "author": "Manoel B. R. Filho",
   "license": "ISC",
@@ -35,11 +35,11 @@
   "bin": "./dist/index.js",
   "pkg": {
     "scripts": "build/**/*.js",
-    "assets": "./dist/views/**/*.ejs",
+    "assets": "./dist/views/**/*.*",
     "targets": [
-      "node14-win"
+      "node14-win-x86"
     ],
-    "outputPath": "dist"
+    "outputPath": "build"
   },
   "devDependencies": {
     "pkg": "^5.8.1"

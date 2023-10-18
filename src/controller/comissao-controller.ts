@@ -12,19 +12,19 @@ import { Response, Router } from "express";
 export class ComissaoController {
   getComissaoPorItem(req: TypedRequestBody<VendaItem>, res: Response<any, Record<string, any>>, next: any): void {
     let p = assembleModelAndPage(req.query);
-    
+
     let work = new ComissaoWorker();
 
     if (p.todasAsPaginas) {
       let retorno: Page<VendaItemComissao>;
-        work.getComissaoListaTotal(req.headers["cnpj"].toString(), p.page.size, p.page.number, p.vendaItem, retorno).then(
-          (result) => {
-            res.status(200).send(result);
-          },
-          (erro) => {
-            res.status(500).send(erro["message"]);
-          }
-        );
+      work.getComissaoListaTotal(req.headers["cnpj"].toString(), p.page.size, p.page.number, p.vendaItem, retorno).then(
+        (result) => {
+          res.status(200).send(result);
+        },
+        (erro) => {
+          res.status(500).send(erro["message"]);
+        }
+      );
     } else {
       work.getComissaoPorItem(req.headers["cnpj"].toString(), p.vendaItem, p.page.number, p.page.size).then(
         (result) => {
@@ -35,8 +35,8 @@ export class ComissaoController {
         }
       );
     }
-    
-   
+
+
   }
 
   getComissaoGroupByIndice(req: TypedRequestBody<VendaItem>, res: Response<any, Record<string, any>>, next: any): void {
@@ -77,13 +77,13 @@ function assembleModelAndPage(params): { vendaItem: VendaItem; page: Page<VendaI
     throw new TypeError("Não foi possível realizar o parse da data informada. Causa: " + error["message"]);
   }
 
-  idVendedor = params?.idVendedor;
-  sizePage = params?.sizePage ?? 50;
-  numberPage = params?.numberPage ?? 0;
-  idProduto = params?.idProduto || null;
-  idGrupo = params?.idGrupo || null;
+  idVendedor = params.idVendedor;
+  sizePage = params.sizePage ? params.sizePage : 50;
+  numberPage = params.numberPage ? params.numberPage : 0;
+  idProduto = params.idProduto || null;
+  idGrupo = params.idGrupo || null;
 
-  todasAsPaginas = params?.todasAsPaginas ?? false;
+  todasAsPaginas = params.todasAsPaginas ? params.todasAsPaginas : false;
 
   if (!dataInicio || !dataFim) throw new TypeError("Deve obrigatoriamente informar a data de inicio(dataInicio) e fim(dataFim) no formato ISO(YYYY-MM-DDThh:mm:ss)");
 
@@ -123,7 +123,7 @@ function assembleModelAndPage(params): { vendaItem: VendaItem; page: Page<VendaI
 
   vendaItem.id_venda = venda;
   // console.log(vendaItem, '\n', page)
-  return { vendaItem, page, todasAsPaginas};
+  return { vendaItem, page, todasAsPaginas };
 }
 
 export const ComissaoRoute = Router();

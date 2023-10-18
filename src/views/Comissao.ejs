@@ -122,7 +122,7 @@
                     }
                 }
 
-                $("tfoot")?.remove();
+                $("tfoot").remove();
 
                 tableBody.after($('<tfoot>').append(`<th scope="row" class="ps-2">Total</th><td class="text-end pe-3">${formatterCom.format(totalVendas)}</td><td></td><td class="text-end pe-2">${formatterCom.format(totalComissao)}</td>`))
 
