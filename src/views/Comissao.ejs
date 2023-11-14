@@ -35,9 +35,9 @@
 
     async function filtrarItens(todasAsPaginas = false) {
 
-        console.log(`http://127.0.0.1:8181/v1/comissao/get_comissao_por_item?dataInicio=${formatDateToAPI(datainicio.val(), 0, 1)}&dataFim=${formatDateToAPI(datafim.val(), 19, 59)}&idVendedor=${parseInt(selectvendedor.val())}&numberPage=${page}`)
+        console.log(`/v1/comissao/get_comissao_por_item?dataInicio=${formatDateToAPI(datainicio.val(), 0, 1)}&dataFim=${formatDateToAPI(datafim.val(), 19, 59)}&idVendedor=${parseInt(selectvendedor.val())}&numberPage=${page}`)
 
-        await fetch(`http://127.0.0.1:8181/v1/comissao/get_comissao_por_item?dataInicio=${formatDateToAPI(datainicio.val(), 5, 1)}&dataFim=${formatDateToAPI(datafim.val(), 19, 59)}&idVendedor=${parseInt(selectvendedor.val())}&numberPage=${page}${todasAsPaginas ? "&todasAsPaginas=true" : ""}`, {
+        await fetch(`/v1/comissao/get_comissao_por_item?dataInicio=${formatDateToAPI(datainicio.val(), 5, 1)}&dataFim=${formatDateToAPI(datafim.val(), 19, 59)}&idVendedor=${parseInt(selectvendedor.val())}&numberPage=${page}${todasAsPaginas ? "&todasAsPaginas=true" : ""}`, {
             method: "GET",
             headers: myheaders,
             // body: JSON.stringify({
@@ -92,7 +92,7 @@
     }
 
     async function filtrarResumo() {
-        await fetch(`http://127.0.0.1:8181/v1/comissao/get_comissao_group_by_indice?dataInicio=${formatDateToAPI(datainicio.val(), 5, 1)}&dataFim=${formatDateToAPI(datafim.val(), 19, 59)}&idVendedor=${parseInt(selectvendedor.val())}`, {
+        await fetch(`/v1/comissao/get_comissao_group_by_indice?dataInicio=${formatDateToAPI(datainicio.val(), 5, 1)}&dataFim=${formatDateToAPI(datafim.val(), 19, 59)}&idVendedor=${parseInt(selectvendedor.val())}`, {
             method: "GET",
             headers: myheaders,
 
@@ -253,7 +253,7 @@
         })
 
 
-        await fetch(`http://127.0.0.1:8181/v1/empresa/get_by_model`, {
+        await fetch(`/v1/empresa/get_by_model`, {
             method: "POST",
             headers: myheaders,
             body: JSON.stringify({
@@ -287,7 +287,7 @@
 
     }, 100);
 
-    fetch("http://127.0.0.1:8181/v1/vendedor/get_by_model", {
+    fetch("/v1/vendedor/get_by_model", {
         method: "POST",
         headers: myheaders,
         body: JSON.stringify({
@@ -318,13 +318,22 @@
 
     }
 
-    .myTable tbody td {
-        font-size: 8px !important;
-        
+    .myTable tbody tr td {
+        font-size: 7pt !important;        
+        line-height: 2pt !important;
+    }
+
+    .myTable tfoot tr td {
+        font-size: 6pt !important;        
+        line-height: 6pt !important;
+    }
+
+    .myTable tfoot tr{
+        margin-top: 50px;
     }
 
     .wrapper {
-        height: 100%;
+        max-height: 100%;
     }
 
     #report-header {
@@ -355,13 +364,13 @@
         font-size: 1rem;
     }
 
-    .table-wrapper {
-        height: 100% !important;
+    #container-table-body {
+        /* height: 100% !important;    */
+        overflow: visible !important;
+        max-height: 100% !important;
     }
 
-    .table-responsive {
-        overflow: visible;
-    }
+
 
     @page {
         size: portrait;
@@ -448,6 +457,7 @@
     th,
     td {
         font-size: 11px !important;
+       
     }
 
     .myTable tfoot {
@@ -523,9 +533,8 @@
 
 
     <div class="titulo-sessao">LISTAGEM</div>
-    <div class="table-wrapper" style="height: calc(100vh - 25em);">
-        <div id="container-table-body" class="table-responsive" style="max-height: 99%">
-            <table class="table table-striped table-hover myTable">
+    <div class="table-wrapper"  id="container-table-body" style="max-height: calc(100vh - 35em) ; overflow-x: auto;">
+            <table class="table table-striped table-hover myTable" style="max-height: 99%;">
                 <thead>
                     <tr>
                         <th scope="col">Cód</th>
@@ -541,6 +550,6 @@
 
                 </tbody>
             </table>
-        </div>
+   
     </div>
 </div>
