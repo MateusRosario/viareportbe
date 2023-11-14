@@ -6,8 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon --exec ts-node ./src/index.ts",
-    "compile": "tsc -build",
-    "build": "pkg ./package.json"
+    "compile": "xcopy /S /E /Y .\\src\\views\\* .\\dist\\views\\ & tsc -build",
+    "build": " npm run compile & pkg ./package.json"
   },
   "author": "Manoel B. R. Filho",
   "license": "ISC",
