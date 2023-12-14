@@ -16,6 +16,10 @@ import { DataBaseConfig } from "./data-base-config";
 import { Empresas } from "./model/entity/empresas";
 import { Console } from "console";
 import { readWritedotEnv } from "./Helpers/WriteReadDotEnv";
+import { DevolucaoVendaViewm } from './model/entity/devolucao-venda-viewm';
+import { DevolucaoItemView } from './model/apoio/devolucao-item-view';
+import { VendaCanceladaViewm } from './model/entity/venda-cancelada-viewm';
+import { VendaDuplicata } from './model/entity/venda-duplicata';
 
 // export const AppDataSource = new DataSource({
 //   type: "postgres",
@@ -63,14 +67,14 @@ class FactoryConnection {
           password: value.password,
           database: value.database,
           synchronize: false,
-          logging: false,
-          entities: [Empresas, Usuarios, Vendedor, Empresas, Venda, VendaItem, Devolucao, DevolucaoItem, FormaPagamento, GrupoProduto, Produto, Cliente],
+          logging: true,
+          entities: [Empresas, Usuarios, Vendedor, Empresas, Venda, VendaItem, Devolucao, DevolucaoItem, FormaPagamento, GrupoProduto, Produto, Cliente, DevolucaoVendaViewm, DevolucaoItemView, VendaCanceladaViewm, VendaDuplicata],
           migrationsRun: false,
           subscribers: [],
         });
         _index = this.connections.push(con);
       } catch (error) {
-        console.log("Não foi possível estabelecer a conexão ao banco de dados ", value.host, ":", value.port, "/", value.database);
+//        console.log("Não foi possível estabelecer a conexão ao banco de dados ", value.host, ":", value.port, "/", value.database);
         this.configs.splice(_index, 1);
       }
     });
@@ -130,28 +134,15 @@ class FactoryConnection {
     let encontrado = -1;
 
     const founded = this.configs.filter((value, index) => {
-      console.log(value.cnpj.replace(/[^0-9]/g, ""), " === ", numeros)
+//      console.log(value.cnpj.replace(/[^0-9]/g, ""), " === ", numeros)
       if (value.cnpj.replace(/[^0-9]/g, "") === numeros) {
         encontrado = index;
         return value;
       }
     } )
-
-    // let encontrado = -1;
-
-    // if (encontrado === -1) {
-    //   this.configs.forEach((value, index) => {
-    //     if (value.cnpj.replace(/[^0-9]/g, "") === numeros) {
-    //       encontrado = index;
-    //     }
-    //   });
-    // } else {
-    //   throw new Error("Não foi possível estabelecer a conexão, CNPJ inválido.");
-    // }
-
     if (founded.length === 0) throw new Error("Não foi possível estabelecer a conexão, CNPJ inválido.");
 
-    console.log("CONEXÃO ENCONTRADA: ", founded[0].host, ':', founded[0].port, '/', founded[0].database);
+//    console.log("CONEXÃO ENCONTRADA: ", founded[0].host, ':', founded[0].port, '/', founded[0].database);
     
     return this.connections[encontrado];
   }

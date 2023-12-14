@@ -9,11 +9,10 @@ export class DevolucaoItem extends BaseEntity {
   id: number;
   @ManyToOne(() => Devolucao, (devolucao) => devolucao.id, {eager: true})
   @JoinColumn({name: "id_devolucao", referencedColumnName: "id"})
-  @Column({ type: "integer" })
   id_devolucao: Devolucao;
   @ManyToOne(() => Produto, (produto) => produto.id, {eager: true})
   @JoinColumn({name: "id_produto", referencedColumnName: "id"})
-  @Column({type: "int4"})
+  // @Column({type: "int4"})
   id_produto: Produto;
   @Column({ type: "character varying" })
   nome_produto: string;

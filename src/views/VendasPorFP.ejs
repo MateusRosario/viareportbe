@@ -1,0 +1,295 @@
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatório vendas pro formas</title>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <style>
+        @import url('https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.css');
+        @import url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css");
+
+        :root {
+            --primaria-100: #014B83;
+            --primaria-60: #83A6BF;
+            --primaria-0: white;
+
+            --secundaria-destaque: #FC7422;
+            --secundaria-neutro: #F6F6F6;
+            --secundaria-20: #c7dceb;
+
+            --base-100: #014B83;
+            --base-80: #1A5D8F;
+            --base-60: #336E9B;
+            --base-40: #4D81A8;
+            --base-20: #6693B4;
+            --base-0: #83A6BF;
+
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 13.5px;
+        }
+
+        .nav-text {
+            font-size: 20px;
+            font-weight: bold;
+            color: white !important;
+
+        }
+
+        .nav-bar {
+            background-color: var(--base-100);
+            color: white !important;
+        }
+
+        .shadown {
+            box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 10px 0 rgba(0, 0, 0, 0.2);
+        }
+
+        footer {
+            position: absolute;
+            bottom: 0px;
+            width: 100%;
+            background-color: var(--base-100);
+            color: white;
+            text-align: center;
+            font-size: 12px !important;
+        }
+
+        @media print {
+
+            .nav-bar,
+            .nav,
+            .form {
+                display: none !important;
+            }
+
+        }
+
+
+
+        thead {
+            background: white;
+            position: sticky;
+            top: 0;
+            /* Don't forget this, required for the stickiness */
+        }
+
+        tfoot {
+            background: white;
+            position: sticky;
+            bottom: 0;
+            /* Don't forget this, required for the stickiness */
+        }
+
+        h6 {
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .tb-row:hover {
+            background-color: var(--primaria-60);
+            color: white;
+        }
+
+        .row-impar {
+            background-color: #eeeeee;
+        }
+
+        .t-header {
+            font-weight: bold;
+            background-color: #d5d5d5;
+        }
+    </style>
+    <style media="print">
+        * {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .card {
+            border: none;
+            box-shadow: none;
+        }
+
+        @page {
+            size: A4;
+            margin-top: 3mm;
+            margin-bottom: 5mm;
+            margin-right: 2mm;
+            margin-left: 2mm;
+            counter-increment: page;
+        }
+
+
+        @page {
+            @bottom-right {
+                content: counter(page) " de " counter(pages);
+            }
+        }
+
+        #body-container {
+            font-size: 9px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <script>
+        const cnpj = '32310156000165';
+        // const cnpj = '<%=cnpj%>';
+        const header = {
+            'Content-Type': 'application/json;charset=utf-8',
+            'cnpj': cnpj
+        };
+        const apiUrl = 'http://127.0.0.1:9005/v1/';
+
+        $(document).ready(() => {
+            BuildHeader($('#header-container'))
+            BuildBody($('#body-container'))
+        })
+        const FormatterCurrency = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+
+        function BuildHeader(container) {
+            fetch(`${apiUrl}empresa/get_by_model?size=1`, {
+                method: 'POST',
+                headers: header
+            }).then(async res => {
+                if (res.ok) {
+                    let emp = await res.json();
+                    if (emp && emp.content) {
+                        emp = emp.content[0];
+                        container.append(`
+                        <div class="row g-0">
+                            <div class="col text-start">
+                                <div class="row g-0 pb-2">
+                                    <h6>${emp.razao_social}</h6>
+                                </div>
+                                <div class="row g-0 pb-2">
+                                    <div class="col">
+                                        CNPJ: ${emp.cnpj}
+                                    </div>
+                                    <div class="col">
+                                        Contato: ${PhoneNumberFormatter(emp.fone)}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col text-end">
+                                ${new Date().toLocaleString()}
+                            </div>
+                        </div>
+                        <div class="row p-2 g-0 text-center">
+                            <div class="col">
+                                aqui o campode filtros data, id etc
+                            </div>
+                        </div>
+                        <div class="row p-2 g-0 text-center">
+                            <h6>Vendas por forma de pagamento</h6>
+                        </div>
+                        `)
+                    }
+                }
+            });
+        }
+
+        function BuildBody(container) {
+
+            fetch(`${apiUrl}venda/get_vendas_por_forma_de_pagamento?dataInicio=2023-12-01T03:00:00.000Z&dataFim=2023-12-08T03:00:00.000Z&idVendedor=`, {
+                method: 'GET',
+                headers: header
+            }).then(async res => {
+                if (res.ok) {
+                    const json = await res.json();
+                    const getRow = (vnd, i) => `
+                     <div class="row p-0 tb-row ${i % 2 == 0 ? '' : 'row-impar'}">
+                        <div class="col-1 p-0 text-start">${vnd.id}</div> 
+                        <div class="col-7 p-0 text-start">${vnd.nome}</div>
+                        <div class="col p-0 text-end">${FormatterCurrency.format(vnd.total ? vnd.total : 0.00)}</div>
+                     </div>
+                     `
+                    let map = new Map();
+
+                    for (let i of json.vendas) {
+                        let dev = json.devolucoes && json.devolucoes.length > 0 ? json.devolucoes.find(d => d.id_vendedor === i.id_vendedor) : { liquido: 0.00 };
+                        dev = dev ? dev : { liquido: 0.00 };
+                        dev['nome'] = i.nome_vendedor
+                        if (map.has(i.id_vendedor)) {
+                            let aux = map.get(i.id_vendedor);
+                            aux.formas.push(i);
+                            aux.total += i.total;
+                            aux.cancelado += i.cancelado;
+                        } else {
+                            map.set(i.id_vendedor, { formas: [i], devolucao: dev, total: i.total, cancelado: i.cancelado })
+                        }
+                    }
+                    map = new Map([...map.entries()].sort((a, b) => b[1].formas.length - a[1].formas.length))
+
+                    for (let i of map.keys()) {
+                        let obj = map.get(i);
+                        container.append(`
+                         <div class="col-4 g-3">
+                             <div class="card">
+                                 <div class="card-header" style="text-transform: uppercase; font-weight: bold">
+                                     ${obj.devolucao.nome}: (${i})
+                                 </div>
+                                 <div class="card-body pt-0">
+                                     <div class="row t-header p-0 m-o">
+                                         <div class="col">Forma</div>
+                                         <div class="col text-end">Valor liquido</div>
+                                     </div>
+                                     ${obj.formas.map((vnd, index) => {
+                            return getRow(vnd, index)
+                        }).join('\n')}
+                                 </div>
+                                 <div class="card-footer pt-0">
+                                    <div class="row p-0" style="background-color: #e3e3e3; text-transform: uppercase;">
+                                         <div class="col p-0">cancelado: ${FormatterCurrency.format(obj.cancelado ? obj.cancelado : 0.00)}</div>
+                                         <div class="col p-0">devolvido: ${FormatterCurrency.format(obj.devolucao.liquido ? obj.devolucao.liquido : 0.00)}</div>
+                                         <div class="col-3 p-0 text-end">${FormatterCurrency.format(obj.total ? obj.total : 0.00)}</div>
+                                     </div>
+                                 </div>
+                             </div>
+                         </div>                        
+                         `)
+
+                    }
+
+
+                }
+            })
+
+        }
+
+        function PhoneNumberFormatter(str) {
+            str = str.replace(/[^0-9]/g, '')
+            if (str.length === 10) {
+                return `(${str.substring(0, 2)}) ${str.substring(2, 7)}-${str.substring(7)}`;
+            } else if (str.length === 11) {
+                return `(${str.substring(0, 2)}) ${str.substring(2, 3)} ${str.substring(3, 7)}-${str.substring(7)}`;
+            }
+            return str;
+        }
+    </script>
+
+    <style>
+        .card {
+            border: rgba(0, 0, 0, 0.3) solid 0.005mm;
+        }
+
+        .tb-row {
+            border-bottom: rgba(0, 0, 0, 0.3) solid 0.005mm;
+        }
+    </style>
+    <div class="container-fluid">
+        <div style="border: 0.05mm solid rgba(0,0,0,0.5);" class="m-1" id="header-container">
+        </div>
+        <div class="row g-0 pe-0" id="body-container">
+
+
+        </div>
+    </div>
+</body>
+
+</html>

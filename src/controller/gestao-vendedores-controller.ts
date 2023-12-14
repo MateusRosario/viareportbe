@@ -57,10 +57,6 @@ const locale = Intl.DateTimeFormat().resolvedOptions();
 
 gestaoVendedoresRouter.get("/dashbaord", async (req, res) => {
 
-  Promise.all([getConnection(req.headers["cnpj"] as string).query("REFRESH MATERIALIZED VIEW  public.devolucao_venda_viewm;")
-    , getConnection(req.headers["cnpj"] as string).query("REFRESH MATERIALIZED VIEW  public.venda_cancelada_viewm;")
-    , getConnection(req.headers["cnpj"] as string).query("REFRESH MATERIALIZED VIEW  public.venda_duplicata_credito_viewm;")]);
-
   let data: {
     inicio: string,
     fim: string

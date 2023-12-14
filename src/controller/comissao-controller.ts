@@ -7,11 +7,15 @@ import { Page } from "../model/apoio/page";
 import { Produto } from "../model/entity/Produto";
 import { GrupoProduto } from "../model/entity/GrupoProduto";
 import { TypedRequestBody } from "./common/ControllerBase";
-import { Response, Router } from "express";
+import { NextFunction, Response, Request, Router } from "express";
+import { Cliente } from '../model/entity/Cliente';
+import { getConnection } from '../data-source';
+import { ComissaoDecrescente } from '../regra-de-negocio/comissao/ComissaoHandlerImplementacoes';
+import { Worker } from 'cluster';
 
 export class ComissaoController {
   getComissaoPorItem(req: TypedRequestBody<VendaItem>, res: Response<any, Record<string, any>>, next: any): void {
-    let p = assembleModelAndPage(req.query);
+    let p = assembleModelAndPage(req.query, getConnection(req.headers['cnpj'] as string));
 
     let work = new ComissaoWorker();
 
@@ -35,12 +39,10 @@ export class ComissaoController {
         }
       );
     }
-
-
   }
 
   getComissaoGroupByIndice(req: TypedRequestBody<VendaItem>, res: Response<any, Record<string, any>>, next: any): void {
-    let p = assembleModelAndPage(req.query);
+    let p = assembleModelAndPage(req.query, getConnection(req.headers['cnpj'] as string));
 
     let work = new ComissaoWorker();
 
@@ -49,15 +51,46 @@ export class ComissaoController {
         res.status(200).json(Array.from(result.values()));
       },
       (erro) => {
-        console.log("getComissaoGroupByIndice", erro["stack"]);
+        //        console.log("getComissaoGroupByIndice", erro["stack"]);
         res.status(500).json(erro["message"]);
       }
     );
   }
+
+  getAnaliticoPorFormaDePagamento(req: Request, res: Response, next: NextFunction) {
+    res.render('AnaliticoPorFormaDePagamento',
+      {
+        cnpj: req.headers['cnpj'], idVenda: req.query.idVenda ? req.query.idVenda : '',
+        idProduto: req.query.idProduto ? req.query.idProduto : '',
+        idCliente: req.query.idCliente ? req.query.idCliente : '',
+        idGrupo: req.query.idGrupo ? req.query.idGrupo : '',
+        idVendedor: req.query.idVendedor ? req.query.idVendedor : '',
+        dataInicio: req.query.dataInicio ? req.query.dataInicio : '',
+        dataFim: req.query.dataFim ? req.query.dataFim : '',
+      })
+
+  }
+
+  getComissaoDecrescente(req: Request, res: Response, next: NextFunction) {
+    const worker = new ComissaoDecrescente();
+    const conn = getConnection(req.headers['cnpj'] as string);
+
+    worker.BuscarEcalcular(conn, {inicio: new Date('2023-12-01'), fim: new Date()}, 'data_saida', undefined, 120031, undefined, undefined).then(vi=>{
+      res.send(vi)
+    })
+    // conn.getRepository(VendaItem).find({ where: { id_venda: { id: 120031 } } }).then(async vis => {
+    //   let ret = [];
+    //   for(let vi of vis){
+    //     ret.push(await worker.calcular(vi, conn));
+    //   }       
+    //   res.send(ret)
+    // }).catch(err => next(err))
+
+  }
 }
 
-function assembleModelAndPage(params): { vendaItem: VendaItem; page: Page<VendaItem>; todasAsPaginas: Boolean } {
-  console.log("assembleModelAndPage ", params);
+function assembleModelAndPage(params, conn): { vendaItem: VendaItem; page: Page<VendaItem>; todasAsPaginas: Boolean } {
+  //  console.log("assembleModelAndPage ", params);
 
   let dataInicio: Date;
   let dataFim: Date;
@@ -100,6 +133,7 @@ function assembleModelAndPage(params): { vendaItem: VendaItem; page: Page<VendaI
   venda.data_saida = new Date(JSON.stringify(dataInicio));
   venda.data_saida["inicio"] = dataInicio;
   venda.data_saida["fim"] = dataFim;
+  venda.id_cliente = params.idCliente ? conn.getRepository(Cliente).create({ id: parseInt(params.idCliente) }) : undefined;
 
   if (idProduto) {
     vendaItem.id_produto = new Produto();
@@ -122,7 +156,7 @@ function assembleModelAndPage(params): { vendaItem: VendaItem; page: Page<VendaI
   page.size = parseInt(sizePage);
 
   vendaItem.id_venda = venda;
-  // console.log(vendaItem, '\n', page)
+  //  // console.log(vendaItem, '\n', page)
   return { vendaItem, page, todasAsPaginas };
 }
 
@@ -132,5 +166,7 @@ const controller = new ComissaoController();
 
 ComissaoRoute.get("/get_comissao_por_item", controller.getComissaoPorItem);
 ComissaoRoute.get("/get_comissao_group_by_indice", controller.getComissaoGroupByIndice);
+ComissaoRoute.get("/get_analitico_por_forma_de_pagamento", controller.getAnaliticoPorFormaDePagamento);
+ComissaoRoute.get('/get_comissao_decrescente', controller.getComissaoDecrescente);
 
 export default ComissaoRoute;

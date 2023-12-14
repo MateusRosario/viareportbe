@@ -21,5 +21,6 @@ export class Empresas extends BaseEntity {
     cidade: string;
     @Column()
     uf: string;
-    
+    @Column({name: 'fone1'})
+    fone: string
 }

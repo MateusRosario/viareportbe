@@ -3,14 +3,12 @@ import { getConnection } from "../../data-source";
 import { isValid } from "../../service/FunctionsServices";
 
 export function BuidWhereByModel(model, cnpj: string) {
-  let retorno = {};
-
-  getConnection(cnpj).getMetadata(model.constructor.name).columns.forEach((element) => {
-
+  let retorno = {};  
+  const conn = getConnection(cnpj);
+  conn.getMetadata(model.constructor.name).columns.forEach((element) => {
     let name = element.propertyName;
     let value = model[name];
     let _type = element.type; 
-
 
     if (value !== undefined && value != null) {
       // console.log(`===> \nNome: ${name} \nValor: ${JSON.stringify(value)} \nTipo: ${_type["name"]} \n======`)      

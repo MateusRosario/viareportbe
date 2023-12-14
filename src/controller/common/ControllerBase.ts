@@ -43,12 +43,12 @@ export function BuildPage<T>(req: TypedRequestBody<any>): Page<T> {
 
   if (isValid(page)) retorno.number = page;
 
-  if (isValid(sort))
+  if (isValid(sort)) {
     retorno.sort = {
       fields: sort.substring(0, sort.lastIndexOf(",")),
       dir: sort.substring(sort.lastIndexOf(",")) === "ASC" ? "ASC" : "DESC",
     };
-
+  }
   if (isValid(size)) retorno.size = size;
 
   return retorno;

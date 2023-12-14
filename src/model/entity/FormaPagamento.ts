@@ -1,8 +1,13 @@
 import { BaseEntity, Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 
+export enum FormaPagamentoCondicaoEnum{
+  AVISTA ='AVISTA',
+  APRAZO ='APRAZO',
+  CRED   ='CRED'
+}
+
 @Entity({ name: "formas_pagamento" })
 export class FormaPagamento extends BaseEntity {
-  
   
   @PrimaryGeneratedColumn()
   id: number;
@@ -10,6 +15,6 @@ export class FormaPagamento extends BaseEntity {
   nome: string;
   @Column()
   ativo: Boolean;
-  @Column()
-  condicao: string;
+  @Column({enum: FormaPagamentoCondicaoEnum})
+  condicao: FormaPagamentoCondicaoEnum;
 }

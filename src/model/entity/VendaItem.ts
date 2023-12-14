@@ -2,6 +2,7 @@ import { Vendedor } from './Vendedor';
 import { Venda } from './Venda';
 import { Produto } from './Produto';
 import { BaseEntity, Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { NumericTransformer } from '../../service/FunctionsServices';
 
 @Entity({name: "venda"})
 export class VendaResumo extends BaseEntity {
@@ -24,6 +25,9 @@ export class VendaItem extends BaseEntity {
   id_venda: Venda;
   // @Column()
   // id_venda: number;
+  @ManyToOne(() => Vendedor, (vendedor) => vendedor.id, {eager: true})
+  @JoinColumn({name: "id_vendedor", referencedColumnName: "id"})
+  id_vendedor: Vendedor;
   @ManyToOne(() => Produto, prod => prod.id, {eager: true})
   @JoinColumn({name:"id_produto", referencedColumnName: "id"})
   id_produto: Produto;
@@ -31,21 +35,21 @@ export class VendaItem extends BaseEntity {
   nome_produto: string;
   @Column()
   unidade: string;
-  @Column({type: "numeric"})
+  @Column({ type: "decimal", transformer: NumericTransformer })
   quantidade: number;
-  @Column({type: "numeric"})
+  @Column({ type: "decimal", transformer: NumericTransformer })
   vl_unitario: number;
-  @Column({type: "numeric"})
+  @Column({ type: "decimal", transformer: NumericTransformer })
   vl_desconto: number;
-  @Column({type: "numeric"})
+  @Column({ type: "decimal", transformer: NumericTransformer })
   vl_total: number;
   @Column()
   id_grupo: number;
   @Column()
   cancelada: string;
-  @Column({type: "numeric"})
+  @Column({ type: "decimal", transformer: NumericTransformer })
   vl_custo: number;
-  @Column({type: "numeric"})
+  @Column({ type: "decimal", transformer: NumericTransformer })
   qtd_caixa: number;
 
   headerCVS(): string {

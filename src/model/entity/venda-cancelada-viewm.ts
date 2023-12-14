@@ -2,7 +2,7 @@ import { ViewColumn, ViewEntity } from "typeorm";
 
 @ViewEntity({
   materialized: true,
-  expression: `SELECT venda.id,
+  /*expression: `SELECT venda.id,
   venda.data_cancelamento,
   venda.id_vendedor,
   venda.vl_produto,
@@ -11,7 +11,7 @@ import { ViewColumn, ViewEntity } from "typeorm";
   venda.vl_total
   FROM venda
   WHERE ((NOT venda.nf_uniao) AND ((venda.gerado)::text = 'SIM'::text) AND ((venda.cancelada)::text = 'SIM'::text))
-  ORDER BY venda.data_cancelamento`,
+  ORDER BY venda.data_cancelamento`,*/
 })
 export class VendaCanceladaViewm {
   @ViewColumn()

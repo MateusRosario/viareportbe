@@ -1,14 +1,17 @@
+import { Cliente } from './../../model/entity/Cliente';
+import { VendaItem } from './../../model/entity/VendaItem';
 import { DevolucaoItem } from "./../../model/entity/devolucao-item";
 import Decimal from "decimal.js";
 import { multiplicarVT } from "../../Helpers/ArithmeticOperators";
-import { FormaPagamento } from "../../model/entity/FormaPagamento";
+import { FormaPagamento, FormaPagamentoCondicaoEnum } from "../../model/entity/FormaPagamento";
 import { Produto } from "../../model/entity/Produto";
-import { VendaItem } from "../../model/entity/VendaItem";
 import { Vendedor } from "../../model/entity/Vendedor";
 import { isValid } from "../../service/FunctionsServices";
 import { IComissaoAdapter, ComissaoHandlerBase, ComissaoHandlerInterface } from "./ComissaoHandler";
 import { ComissaoTipo, VendaItemComissao, VendaStatus } from "./VendaItemComissao";
 import { Venda } from "../../model/entity/Venda";
+import { Between, DataSource, Repository } from 'typeorm';
+import { Empresas } from '../../model/entity/empresas';
 
 export class ComissaoProdutoHandler extends ComissaoHandlerBase {
   protected ifHandler(item: IComissaoAdapter, valorComissao: VendaItemComissao): boolean {
@@ -188,4 +191,157 @@ export function getComissaoHandlerOrder(): ComissaoHandlerInterface {
   const d = new ComissaoDefaultHandler();
 
   return a.setNextHandler(b.setNextHandler(c.setNextHandler(d)));
+}
+
+export class ComissaoDecrescente {
+  static INTERVALO_SQL = `SELECT UNNEST (ARRAY [ intervalo_a1 :: FLOAT, intervalo_b1 :: FLOAT,intervalo_c1 :: FLOAT,intervalo_d1 :: FLOAT,intervalo_e1 :: FLOAT,intervalo_f1 :: FLOAT,intervalo_g1 :: FLOAT,intervalo_h1 :: FLOAT,intervalo_i1 :: FLOAT,intervalo_j1 :: FLOAT,intervalo_l1 :: FLOAT,intervalo_m1 ]) AS intervalo_1,UNNEST (ARRAY [ intervalo_a2 :: FLOAT,intervalo_b2 :: FLOAT,intervalo_c2 :: FLOAT,intervalo_d2 :: FLOAT,intervalo_e2 :: FLOAT,intervalo_f2 :: FLOAT,intervalo_g2 :: FLOAT,intervalo_h2 :: FLOAT,intervalo_i2 :: FLOAT,intervalo_j2 :: FLOAT,intervalo_l2 :: FLOAT,intervalo_m2 ]) AS intervalo_2,UNNEST (ARRAY [ comissao_a :: FLOAT,comissao_b :: FLOAT,comissao_c :: FLOAT,comissao_d :: FLOAT,comissao_e :: FLOAT,comissao_f :: FLOAT,comissao_g :: FLOAT,comissao_h :: FLOAT,comissao_i :: FLOAT,comissao_j :: FLOAT,comissao_l :: FLOAT,comissao_m :: FLOAT ]) AS comissao FROM empresas;`;
+  static INTERVALO: intervalo[] = undefined;
+
+  constructor() {
+    ComissaoDecrescente.INTERVALO = undefined;
+  }
+
+  public BuscarEcalcular(connection: DataSource, data: { inicio: Date, fim: Date }, fieldData: string, idVendedor?: number, idVenda?: number, idCliente?: number, idProduto?: number) {
+    const repository = {
+      empresa: connection.getRepository(Empresas),
+      vendaItem: connection.getRepository(VendaItem),
+      venda: connection.getRepository(Venda)
+    }
+
+    const where = { nf_uniao: false, gerado: 'SIM' };
+    where[`${fieldData}`] = Between(data.inicio, data.fim);
+
+    if (idVendedor) {
+      where['id_vendedor'] = idVendedor;
+    }
+    if (idVenda) {
+      where['id'] = idVenda;
+    }
+    if (idCliente) {
+      where['id_cliente'] = idCliente;
+    }
+    if (idProduto) {
+      where['itens'] = {
+        id_produto: {
+          id: idProduto
+        }
+      };
+    }
+    
+    return new Promise(async (resolve, reject) => {
+      repository.venda.find({ where: where, loadEagerRelations: false, relations: ['itens', 'itens.id_vendedor', 'itens.id_produto', 'id_cliente', 'id_vendedor', 'id_forma'] }).then(async vds => {
+        let retorno: vendaMiniModel[] = [];
+        for (let v of vds) {
+          let miniVenda = {} as vendaMiniModel;
+
+          miniVenda.id = v.id;
+          miniVenda.data_emissao = v.data_emissao;
+          miniVenda.data_saida = v.data_saida;
+          miniVenda.vl_total = v.vl_total;
+          miniVenda.vl_produto = v.vl_produto;
+          miniVenda.vl_desconto = v.vl_desconto;
+          miniVenda.cliente = {
+            nome: v.id_cliente.nome,
+            id: v.id_cliente.id
+          }
+          miniVenda.gerado = v.gerado;
+          miniVenda.vendedor = new Map<number, VendaItemComissao[]>();
+          for (let i of v.itens) {
+            i.id_venda = v;
+            let item = await this.calcular(i, connection);
+            
+            if(miniVenda.vendedor.has(item.id_vendedor)){
+              miniVenda.vendedor.get(item.id_vendedor).push(item);
+            }else{
+              miniVenda.vendedor.set(item.id_vendedor, [item]);
+            }
+          }
+          miniVenda.vendedor = Array.from(miniVenda.vendedor.entries())         
+          retorno.push(miniVenda);
+        }
+        
+              
+        resolve(retorno);
+      }).catch(err => reject(err));
+    })
+  }
+
+  public calcular(item: VendaItem, connection: DataSource) {
+    return new Promise<VendaItemComissao>(async (resolve, reject) => {
+      let adapter = ComissaoAdapterProvider(item, VendaStatus.NORMAL);
+      if (!isValid(adapter.getFormaPagamento()) || !isValid(adapter.getProduto())) {
+        reject(new Error('Produto ou forma de pagamento inexistente!'))
+      }
+      let inter = undefined;
+
+      if (ComissaoDecrescente.INTERVALO) {
+        inter = ComissaoDecrescente.INTERVALO;
+      } else {
+        inter = await connection.query<intervalo[]>(ComissaoDecrescente.INTERVALO_SQL);
+        ComissaoDecrescente.INTERVALO = inter;
+      }
+
+      const prod = adapter.getProduto();
+
+      let ret = new VendaItemComissao();
+
+      ret.id_venda = item.id_venda.id;
+      ret.cliente = { id: item.id_venda.id_cliente.id, nome: item.id_venda.id_cliente.nome }
+      ret.id = item.id;
+      ret.id_vendedor = item.id_vendedor ? item.id_vendedor.id : item.id_venda.id_vendedor.id;
+      ret.nome_vendedor = item.id_vendedor ? item.id_vendedor.nome.trim() : item.id_venda.id_vendedor.nome.trim();
+      ret.comissao_indice = prod.gera_comissao ? ComissaoTipo.COMISSAO_DESCRESCENTE : ComissaoTipo.PRODUTO_COM_RESTRICAO;
+      ret.id_produto = prod.id;
+      ret.nome_produto = prod.nome;
+      ret.vl_total = adapter.getValorLiquido();
+      if (!prod.gera_comissao) {
+        ret.comissao_percentual = 0.00;
+        ret.comissao_valor = 0.00;
+        resolve(ret);
+        return;
+      }
+      const pDesconto = Decimal.div(Decimal.mul(item.vl_desconto, 100), adapter.getValorLiquido()).toNumber();
+      const i: intervalo = inter.find((cm: intervalo) => cm.intervalo_1 <= pDesconto && cm.intervalo_2 >= pDesconto);
+
+      ret.comissao_percentual = i.comissao;
+      ret.comissao_valor = multiplicarVT([Decimal.div(i.comissao, 100).toDecimalPlaces(2).toNumber(), adapter.getValorLiquido()]);
+
+      resolve(ret);
+    })
+  }
+
+  public createVendaBasica(venda: Venda) {
+    const ret = new Venda();
+    ret.id = venda.id;
+    ret.data_saida = venda.data_saida;
+    ret.data_cancelamento = venda.data_cancelamento;
+    ret.data_emissao = venda.data_emissao;
+    ret.vl_desconto = venda.vl_desconto;
+    ret.vl_produto = venda.vl_produto;
+    ret.vl_total = venda.vl_total;
+    ret.id_cliente = new Cliente();
+    ret.id_cliente.id = venda.id_cliente.id;
+    ret.id_cliente.nome = venda.id_cliente.nome;
+
+    return ret;
+  }
+}
+
+export interface intervalo {
+  intervalo_1: number;
+  intervalo_2: number;
+  comissao: number;
+}
+
+export interface vendaMiniModel {
+  id: number
+  cliente: { nome: string, id: number }
+  data_saida: Date;
+  data_emissao: Date;
+  data_cancelamento: Date;
+  gerado: string;
+  vl_total: number;
+  vl_desconto: number;
+  vl_produto: number;
+  vendedor: Map<number, VendaItemComissao[]> | any
 }

@@ -32,9 +32,9 @@ factoryDataSource().initialize(() => {
   app.set('views', path.join(__dirname, "views"));
 
 
-  app.use(function (err: httpException, req: Request, res: Response, next) {
-    ErroHandle(err, req, res, next);
-  });
+  // app.use(function (err: httpException, req: Request, res: Response, next) {
+  //   ErroHandle(err, req, res, next);
+  // });
 
   app.use("/v1", (req, res, next) => {
     if (req.headers["cnpj"]) {

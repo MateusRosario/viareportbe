@@ -1,0 +1,561 @@
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analitico por FP</title>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script> 
+
+    <style>
+        @import url('https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.css');
+        @import url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css");
+
+        :root {
+            --primaria-100: #014B83;
+            --primaria-60: #83A6BF;
+            --primaria-0: white;
+
+            --secundaria-destaque: #FC7422;
+            --secundaria-neutro: #F6F6F6;
+            --secundaria-20: #c7dceb;
+
+            --base-100: #014B83;
+            --base-80: #1A5D8F;
+            --base-60: #336E9B;
+            --base-40: #4D81A8;
+            --base-20: #6693B4;
+            --base-0: #83A6BF;
+
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 13.5px;
+        }
+
+        .nav-text {
+            font-size: 20px;
+            font-weight: bold;
+            color: white !important;
+
+        }
+
+        .nav-bar {
+            background-color: var(--base-100);
+            color: white !important;
+        }
+
+        .shadown {
+            box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 10px 0 rgba(0, 0, 0, 0.2);
+        }
+
+        footer {
+            position: absolute;
+            bottom: 0px;
+            width: 100%;
+            background-color: var(--base-100);
+            color: white;
+            text-align: center;
+            font-size: 12px !important;
+        }
+
+        @media print {
+
+            .nav-bar,
+            .nav,
+            .form {
+                display: none !important;
+            }
+
+        }
+
+
+
+        thead {
+            background: white;
+            position: sticky;
+            top: 0;
+            /* Don't forget this, required for the stickiness */
+        }
+
+        tfoot {
+            background: white;
+            position: sticky;
+            bottom: 0;
+            /* Don't forget this, required for the stickiness */
+        }
+
+        h6 {
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .tb-row:hover {
+            background-color: var(--primaria-60);
+            color: white;
+        }
+
+        .row-impar {
+            background-color: #eeeeee;
+        }
+
+        .t-header {
+            font-weight: bold;
+            background-color: #d5d5d5;
+        }
+
+        /* paged.js display rules */
+        .pagedjs_pages {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .pagedjs_page {
+            box-shadow: 0 0 0 1px red;
+            margin: 1em;
+        }
+    </style>
+    <style media="print">
+        * {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .myTable tbody tr td {
+            font-size: 7pt !important;
+            line-height: 2pt !important;
+        }
+
+        .myTable tfoot tr td {
+            font-size: 6pt !important;
+            line-height: 6pt !important;
+        }
+
+        .myTable tfoot tr {
+            margin-top: 50px;
+        }
+
+        .wrapper {
+            max-height: 100%;
+        }
+
+        #report-header {
+            border: black 1px solid;
+            padding: 5px;
+            display: block;
+        }
+
+        .div-label {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .label-header {
+            padding: 0 5px;
+            font-weight: bold;
+        }
+
+        .nome-empresa {
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 0 5px;
+            margin: 0 0 5px 0;
+        }
+
+        .titulo-relatorio {
+            padding: 5px;
+            font-size: 1rem;
+        }
+
+        #container-table-body {
+            /* height: 100% !important;    */
+            overflow: visible !important;
+            max-height: 100% !important;
+        }
+
+        .card {
+            border: none;
+            box-shadow: none;
+        }
+
+        #card-body-container {
+            font-size: 7pt !important;
+        }
+
+        @page {
+            size: A4;
+            margin-top: 3mm;
+            margin-bottom: 5mm;
+            margin-right: 5mm;
+            margin-left: 5mm;
+            counter-increment: page;
+        }
+
+
+        @page {
+            @bottom-right {
+                content: counter(page) " de " counter(pages);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <script>
+        const apiUrl = 'http://127.0.0.1:9005/v1/';
+        const cnpj = '<%=cnpj%>';
+        const idProduto = '<%=idProduto%>';
+        const idCliente = '<%=idCliente%>';
+        const idVendedor = '<%=idVendedor%>';
+        const idGrupo = '<%=idGrupo%>';
+        const dataInicio = '<%=dataInicio%>';
+        const dataFim = '<%=dataFim%>';
+
+        const dates = {
+            inicio: new Date(),
+            fim: new Date()
+        }
+        const formatter = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+
+        const header = {
+            'Content-Type': 'application/json;charset=utf-8',
+            'cnpj': cnpj
+        };
+        const tempo = new Date();
+
+        /**
+         *Inicia o processo de construção do relatório 
+         **/
+        $(document).ready(() => {
+            let dt = new Date();
+            dates.inicio = dataInicio ? new Date(dataInicio) : new Date(dt.getFullYear(), dt.getMonth(), 1);
+            dates.fim = dataFim ? new Date(dataFim) : new Date(dt.getFullYear(), dt.getMonth() + 1, 0);
+
+            //busca as informações da empresa
+            fetch(`${apiUrl}empresa/get_by_model`, {
+                method: 'POST',
+                headers: header,
+                body: '{"id": 1 }'
+            }).then(async res => {
+                if (res.ok) {
+                    let emp = await res.json();
+                    if (emp && emp.content && emp.content.length > 0)
+                        BuildHeader(emp.content[0]);
+                    BuildBody()
+                }
+            }).catch(err => console.error(err));
+        })
+        /**
+         * constroio o cabeçalho do relatório
+         **/
+        function BuildHeader(emp) {
+            const container = $('#card-header-container');
+            container.append(`
+            <h6>${emp.nome}</h6>
+            <div class="row">
+                <div class="col  text-start">
+                    CNPJ: ${emp.cnpj}
+                </div>
+                <div class="col text-end">
+                    impresso: ${new Date().toLocaleString()}
+                </div>
+            </div>
+            <div class="row text-center  mt-2 mb-2">
+                <div class="col">FILTROS: Datas: ${dates.inicio.toLocaleString()} há ${dates.fim.toLocaleString()} | Vendedor: ${idVendedor ? 'id: ' + idVendedor : 'TODOS'}</div>
+            </div>
+            <div class="row text-center">
+                <h6>Comissão de venda clientes e resumo</h6>
+            </div>
+            `)
+        }
+        /**
+         * Busca o os vendedores e constroi o corpo do relatório
+         **/
+        function BuscarVendedor(container) {
+            fetch(`${apiUrl}vendedor/get_by_model?sort=id,DESC`, {
+                method: 'POST',
+                headers: header,
+                body: JSON.stringify({
+                    "ativo": "SIM",
+                    "pageInfo": {
+                        "size": 1000,
+                        "page": 0
+                    }
+                })
+            }).then(async res => {
+                if (res.ok) {
+                    let v = await res.json();
+                    container.append(`
+                    <div class="row text-start" style="font-size: 15px; text-transform: uppercase">Vendas:</div>
+                    `)
+
+                    await BuildVendasTbl(container, idVendedor ? [v.content.find(el => `${el.id}` === idVendedor)] : v.content);
+
+                    container.append(`
+                    <div class="row text-start mt-2" style="font-size: 15px; text-transform: uppercase; page-break-before: always;">Devoluções de venda:</div>
+                     `)
+
+                    await BuildDevolucoesPorvendedor(container, idVendedor ? [v.content.find(el => `${el.id}` === idVendedor)] : v.content)
+
+                }
+            }).catch(err => console.error(err));
+        }
+        /**
+         * Constroi as as vendas na tabela
+         **/
+        function BuildVendasTbl(container, vendedores) {
+            let getVendas = async (vendedor) => {
+                return fetch(`${apiUrl}comissao/get_comissao_por_item?dataInicio=${dates.inicio.toISOString()}&dataFim=${dates.fim.toISOString()}&idVendedor=${vendedor.id}&idCliente=${idCliente ? idCliente : ''}&idProduto=${idProduto ? idProduto : ''}&idGrupo=${idGrupo ? idGrupo : ''}&todasAsPaginas=true`, {
+                    method: 'GET',
+                    headers: header
+                });
+            };
+            return new Promise(async (resolve, reject) => {
+                for (let i of vendedores) {
+                    const res = await getVendas(i);
+                    if (res.ok) {
+                        let vds = await res.json();
+                        const getVl = (value, flag) => {
+                            return `
+                            <div class="row p-1 tb-row ${flag ? '' : 'row-impar'}">
+                                    <div class="col">${value.id_venda}</div>
+                                    <div class="col">${new Date(value.data_saida).toLocaleDateString()}</div>
+                                    <div class="col">${value.cliente && value.cliente.id ? value.cliente.id : ''}</div>
+                                    <div class="col-4 text-start">${value.cliente && value.cliente.nome ? value.cliente.nome : (
+                                    value.status === 'DEVOLVIDA' ? 'Venda devolvida produto: '.toUpperCase() + (value.nome_produto ? value.nome_produto : '') : ''
+                                )}</div>
+                                    <div class="col text-end">${formatter.format(value.vl_total)}</div>
+                                    <div class="col text-end">${formatter.format(value.comissao_valor)}</div>
+                            </div>
+                            `
+                        }
+                        if (vds.content.length > 0) {
+                            let tb = `
+                            <div class="row text-start m-2 ms-0 p-2 ps-1" style="
+                                border: 0.05mm solid #c1c1c1;
+                            ">VENDEDOR:  ${i.nome} (id: ${i.id})</div>
+                            <div class="row p-1 t-header">
+                                <div class="col">Id Venda</div>
+                                <div class="col">Data saída</div>
+                                <div class="col">Id cliente</div>
+                                <div class="col-4 text-start">Nome do cliente</div>
+                                <div class="col text-end">Valor total</div>
+                                <div class="col text-end">Comissao</div>
+                            </div>                            
+                            `
+                            const aux = {
+                                total_venda: 0,
+                                total_comissao: 0
+                            }
+                            let tbRow = '';
+                            let flag = true;
+                            for (let y = 0; y < vds.content.length; y++) {
+
+                                // tbRow = tbRow.concat(`${getVl(vds.content[y], y)}\n`);
+                                // aux.total_venda += vds.content[y].vl_total;
+                                // aux.total_comissao += vds.content[y].comissao_valor;
+
+                                //Agrupa os itens de acordo ao id da venda
+                                if (y + 1 < vds.content.length) {
+                                    if (vds.content[y].id_venda === vds.content[y + 1].id_venda) {
+                                        vds.content[y + 1].vl_total += vds.content[y].vl_total;
+                                    } else {
+                                        tbRow = tbRow.concat(`${getVl(vds.content[y], flag)}\n`);
+                                        aux.total_venda += vds.content[y].vl_total;
+                                        aux.total_comissao += vds.content[y].comissao_valor;
+                                        flag = !flag;
+                                    }
+                                } else {
+                                    tbRow = tbRow.concat(`${getVl(vds.content[y], flag)}\n`);
+                                    aux.total_venda += vds.content[y].vl_total;
+                                    aux.total_comissao += vds.content[y].comissao_valor;
+                                    flag = !flag;
+                                }
+                            }
+
+                            tb = `${tb}\n${tbRow}`;
+
+                            container.append(tb);
+                            container.append(`
+                            <div class="row p-1 t-header" style="background-color: #d5d5d5 !important">
+                                <div class="col-9"></div>
+                                <div class="col me-3 text-end">${formatter.format(aux.total_venda)}</div>
+                                <div class="col text-end">${formatter.format(aux.total_comissao)}</div>
+                            </div> 
+                            `)
+                        }
+                    }
+
+                }
+                resolve(undefined);
+            })
+        }
+
+        function BuildDevolucoesPorvendedor(container, vendedores) {
+            return new Promise(async (resolve, reject) => {
+
+                try {
+                    const res = await fetch(`${apiUrl}devolucao/devolucoes_por_vendedor?dataInicio=${dates.inicio.toISOString()}&dataFim=${dates.fim.toISOString()}&idVendedor=${vendedores.length === 1 ? idVendedor : ''}`, {
+                        method: 'GET',
+                        headers: header
+                    })
+                    if (res.ok) {
+                        let json = await res.json();
+                        let d = json.devolucoes
+                        if (d && d.length > 0) {
+
+                            const getItems = async (devolucao, vendedor) => {
+                                let retorno = '';
+
+                                /* let model = {
+                                     "id_devolucao": {
+                                         "id": devolucao.id,
+                                     },
+                                 }
+ 
+                                 if (idProduto) {
+                                     model["id_produto"] = {
+                                         "id": idProduto ? parseInt(idProduto) : undefined
+                                     };
+                                 }
+ 
+                                 if (idGrupo) {
+                                     model["id_produto"] = {
+                                         "id_grupo": {
+                                             "id": idGrupo ? parseInt(idGrupo) : undefined
+                                         }
+                                     };
+                                 }
+ 
+                                 const res = await fetch(`${apiUrl}devolucao_item/get_by_model?sort=id_produto.id,ASC&size=1000`, {
+                                     method: 'POST',
+                                     headers: header,
+                                     body: JSON.stringify(model)
+                                 });*/
+
+                                let di = json.itens.filter(el => el.id_devolucao === devolucao.id);
+
+                                if (di && di.length > 0) {
+                                    return di.map((el, index) => {
+                                        return `
+                                            <div class="row ms-5 g-0 tb-row ${index % 2 == 0 ? '' : 'row-impar'} pb-2 pt-2" style="border-bottom: 0.05mm solid black">
+                                                <div class="col"></div>
+                                                <div class="col-6">${el.nome_produto}${el.id_produto && el.id_produto.id ? ' - ' + el.id_produto.id : ''}</div>
+                                                <div class="col text-end me-2">${formatter.format(el.vl_unitario)}</div>
+                                                <div class="col  text-center">${el.quantidade} ${el.unidade ? el.unidade : ''}</div>
+                                                <div class="col text-end">${formatter.format(el.vl_total)}</div>
+                                            </div>
+                                            `;
+                                    }).join('\n')
+                                }
+
+
+                                return '';
+
+                            }
+                            const getRow = (el) => {
+                                return `
+                                <div class="row p-2  tb-row">
+                                    <div class="col-1">${el.id_venda}</div>
+                                    <div class="col-1 text-center ms-4">${el.id}</div>
+                                    <div class="col-1">${el.id_cliente}</div>
+                                    <div class="col-4 text-start">${el.nome_cliente}</div>
+                                    <div class="col-auto">${vendedores.find((v) => el.id_vendedor === v.id).nome}</div>
+                                    <div class="col text-end">${formatter.format(el.vl_total)}</div>
+                                </div>
+                                <div class="row ms-3 t-header g-0">
+                                    <div class="col text-center">
+                                        <i class="bi bi-arrow-return-right" style="font-size: larger;"></i>
+                                    </div>
+                                    <div class="col-6">Nome produto</div>                                    
+                                    <div class="col text-center">Valor unitario</div>
+                                    <div class="col  text-center">Quantidade</div>
+                                    <div class="col text-end">Valor Total</div>
+                                </div>
+                                `;
+                            }
+                            let tb = `
+                            <div class="row p-2 mt-2  t-header">
+                                <div class="col-1">Id venda</div>
+                                <div class="col-auto">Id devolução</div>
+                                <div class="col-1">Id cliente</div>
+                                <div class="col-4 text-start">Nome cliente</div>
+                                <div class="col-auto">Nome vendedor</div>
+                                <div class="col text-end">Valor total</div>
+                            </div>
+                            `;
+                            for (let r = 0; r < d.length; r++) {
+                                const i = await getItems(d[r]);
+                                tb = tb.concat(getRow(d[r])).concat('\n').concat(i);
+
+                            }
+
+                            container.append(tb);
+                            container.ready(() => {
+                                container.removeClass('placeholder');
+                                $('#card-header-container').removeClass('placeholder');
+                               console.log('Tempo de construção', new Date().getTime()-tempo.getTime(), 'ms');
+                            })
+
+                        }
+                    }
+                } catch (error) {
+                    reject(error)
+                }
+            })
+        }
+
+        function BuildBody(filters) {
+            const container = $('#card-body-container');
+            BuscarVendedor(container);
+        }
+
+        function BuildFooter() {
+            const container = $('#card-footer-container');
+        }
+
+        function CpfCnpjFormatter(value) {
+            let retorno = '';
+
+            if (value) {
+                let split = value.split('');
+                if (split.length <= 11 && split.length > 0) {
+                    for (let i = 0; i < split.length; i++) {
+                        if (i == 3 || i == 6) {
+                            retorno += '.';
+                        }
+                        if (i == 9) {
+                            retorno += '-';
+                        }
+                        retorno += split[i];
+                    }
+                } else {
+                    for (let i = 0; i < split.length; i++) {
+                        if (i == 2 || i == 5) {
+                            retorno += '.';
+                        }
+                        if (i == 8) {
+                            retorno += '/';
+                        }
+                        if (i == 12) {
+                            retorno += '-';
+                        }
+                        retorno += split[i];
+                    }
+                }
+            }
+            return retorno;
+        }
+        ;
+    </script>
+    <div class="card p-2 placeholder-glow">
+        <div class="card-header placeholder" id="card-header-container" style="border: 0.05mm solid black;">
+
+        </div>
+        <div class="card-body placeholder" id="card-body-container" style="font-size: 8pt; border: 0.05 solid #c1c1c1;">
+
+        </div>
+    </div>
+</body>
+
+</html>

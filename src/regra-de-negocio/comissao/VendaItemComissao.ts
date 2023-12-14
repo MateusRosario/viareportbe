@@ -7,7 +7,8 @@ export enum ComissaoTipo {
     GRUPO_COM_RESTRICAO = "GRUPO COM RESTRIÇÃO",
     VENDEDOR_COMISSAO_APRAZO = "COMISSÃO A PRAZO",
     VENDEDOR_COMISSAO_AVISTA = "COMISSÃO A VISTA",
-    SEM_COMISSAO = "NÃO TEM COMISSÃO"
+    SEM_COMISSAO = "NÃO TEM COMISSÃO",
+    COMISSAO_DESCRESCENTE= "RESTRITO POR COMISSÃO DECRESCENTE"
 }
 
 export enum VendaStatus {
@@ -30,6 +31,10 @@ export class VendaItemComissao {
     comissao_percentual: number;
     comissao_valor: number;
     status: VendaStatus;
+    cliente: {
+        id: number,
+        nome: string
+    }
 
 
     toString(): string {
