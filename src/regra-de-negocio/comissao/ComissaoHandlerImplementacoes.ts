@@ -212,7 +212,7 @@ export class ComissaoDecrescente {
     where[`${fieldData}`] = Between(data.inicio, data.fim);
 
     if (idVendedor) {
-      where['id_vendedor'] = idVendedor;
+      where['id_vendedor'] = {id: idVendedor};
     }
     if (idVenda) {
       where['id'] = idVenda;
@@ -229,7 +229,7 @@ export class ComissaoDecrescente {
     }
     
     return new Promise(async (resolve, reject) => {
-      repository.venda.find({ where: where, loadEagerRelations: false, relations: ['itens', 'itens.id_vendedor', 'itens.id_produto', 'id_cliente', 'id_vendedor', 'id_forma'] }).then(async vds => {
+      repository.venda.find({ where: where, loadEagerRelations: false, relations: ['itens', 'itens.id_vendedor', 'itens.id_produto', 'id_cliente', 'id_vendedor', 'id_forma'], order:{id_vendedor: {id: 'ASC'}} }).then(async vds => {
         let retorno: vendaMiniModel[] = [];
         for (let v of vds) {
           let miniVenda = {} as vendaMiniModel;
@@ -303,8 +303,8 @@ export class ComissaoDecrescente {
       const pDesconto = Decimal.div(Decimal.mul(item.vl_desconto, 100), adapter.getValorLiquido()).toNumber();
       const i: intervalo = inter.find((cm: intervalo) => cm.intervalo_1 <= pDesconto && cm.intervalo_2 >= pDesconto);
 
-      ret.comissao_percentual = i.comissao;
-      ret.comissao_valor = multiplicarVT([Decimal.div(i.comissao, 100).toDecimalPlaces(2).toNumber(), adapter.getValorLiquido()]);
+      ret.comissao_percentual = i && i.comissao ? i.comissao : 0;
+      ret.comissao_valor = multiplicarVT([Decimal.div(ret.comissao_percentual, 100).toDecimalPlaces(2).toNumber(), adapter.getValorLiquido()]);
 
       resolve(ret);
     })

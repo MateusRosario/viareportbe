@@ -56,18 +56,6 @@
             font-size: 12px !important;
         }
 
-        @media print {
-
-            .nav-bar,
-            .nav,
-            .form {
-                display: none !important;
-            }
-
-        }
-
-
-
         thead {
             background: white;
             position: sticky;
@@ -100,37 +88,49 @@
             font-weight: bold;
             background-color: #d5d5d5;
         }
-    </style>
-    <style media="print">
-        * {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 0;
-        }
 
-        .card {
-            border: none;
-            box-shadow: none;
-        }
-
-        @page {
-            size: A4;
-            margin-top: 3mm;
-            margin-bottom: 5mm;
-            margin-right: 2mm;
-            margin-left: 2mm;
-            counter-increment: page;
-        }
-
-
-        @page {
-            @bottom-right {
-                content: counter(page) " de " counter(pages);
+        @media print {
+            * {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                margin: 0;
+                padding: 0;
+                font-size: 9px;
             }
-        }
 
-        #body-container {
-            font-size: 9px;
+            .card {
+                border: none;
+                box-shadow: none;
+            }
+
+            @page {
+                size: A4;
+                margin-top: 3mm;
+                margin-bottom: 5mm;
+                margin-right: 2mm;
+                margin-left: 2mm;
+            }
+
+
+            /* @page {
+                @bottom-right {
+                    content: counter(page);
+                }
+            } */
+
+            /* } */
+
+            #card-body-container {
+                display: table;
+            }
+
+            #pageFooter {
+                display: table-footer-group;
+            }
+
+            #pageFooter::after {
+                counter-increment: page;
+                content: 'Page: ' counter(page);
+            }
         }
     </style>
 </head>
@@ -140,10 +140,10 @@
         const apiUrl = 'http://127.0.0.1:9005/v1/';
         const cnpj = '32310156000165';//'<%=cnpj%>';
         const NumberFormatter = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
-        const Percentformatter = new Intl.NumberFormat("pt-BR", { style: "percent"});
-        
+        const Percentformatter = new Intl.NumberFormat("pt-BR", { style: "percent" });
+
         const produtoHeader = `
-        <div class="row ms-5 t-header">
+        <div class="row ms-5 g-0 t-header">
             <div class="col-1 text-center">
                 <i class="bi bi-arrow-return-right" style="font-size: larger;"></i>
             </div>
@@ -199,59 +199,86 @@
         }
 
         function BuildBody(container) {
-            const obj = JSON.parse(`[{"cliente":{"id":1,"nome":"CONSUMIDOR"},"data_emissao":"2023-12-01",  "data_saida": "2023-12-01","gerado":"SIM","id":120031,"vendedor":[[3,[{"cliente":{"id":1,"nome":"CONSUMIDOR"},"comissao_indice":"RESTRITO POR COMISSÃO DECRESCENTE","comissao_percentual":5,"comissao_valor":1.75,"id":293638,"id_produto":1641,"id_venda":120031,"id_vendedor":3,"nome_produto":"TRELICA TG8 6MT GERDAU","nome_vendedor":"JACQUELINE","vl_total":35},{"cliente":{"id":1,"nome":"CONSUMIDOR"},"comissao_indice":"RESTRITO POR COMISSÃO DECRESCENTE","comissao_percentual":5,"comissao_valor":6.6,"id":293639,"id_produto":5863,"id_venda":120031,"id_vendedor":3,"nome_produto":"CIMENTO POTY/TOCANTINS 50 KG","nome_vendedor":"JACQUELINE","vl_total":132},{"cliente":{"id":1,"nome":"CONSUMIDOR"},"comissao_indice":"RESTRITO POR COMISSÃO DECRESCENTE","comissao_percentual":5,"comissao_valor":0.84,"id":293640,"id_produto":4464,"id_venda":120031,"id_vendedor":3,"nome_produto":"SPRAY TEKBOND 350ML PRIME FUNDO","nome_vendedor":"JACQUELINE","vl_total":16.99},{"cliente":{"id":1,"nome":"CONSUMIDOR"},"comissao_indice":"RESTRITO POR COMISSÃO DECRESCENTE","comissao_percentual":1,"comissao_valor":0.13,"id":293642,"id_produto":6394,"id_venda":120031,"id_vendedor":3,"nome_produto":"ESPATULA TIGRE 06 CM 2,5","nome_vendedor":"JACQUELINE","vl_total":13.01}]]],"vl_desconto":1.96,"vl_produto":198.96,"vl_total":197}]`);
+            // const obj = JSON.parse(`[{"cliente":{"id":1,"nome":"CONSUMIDOR"},"data_emissao":"2023-12-01",  "data_saida": "2023-12-01","gerado":"SIM","id":120031,"vendedor":[[3,[{"cliente":{"id":1,"nome":"CONSUMIDOR"},"comissao_indice":"RESTRITO POR COMISSÃO DECRESCENTE","comissao_percentual":5,"comissao_valor":1.75,"id":293638,"id_produto":1641,"id_venda":120031,"id_vendedor":3,"nome_produto":"TRELICA TG8 6MT GERDAU","nome_vendedor":"JACQUELINE","vl_total":35},{"cliente":{"id":1,"nome":"CONSUMIDOR"},"comissao_indice":"RESTRITO POR COMISSÃO DECRESCENTE","comissao_percentual":5,"comissao_valor":6.6,"id":293639,"id_produto":5863,"id_venda":120031,"id_vendedor":3,"nome_produto":"CIMENTO POTY/TOCANTINS 50 KG","nome_vendedor":"JACQUELINE","vl_total":132},{"cliente":{"id":1,"nome":"CONSUMIDOR"},"comissao_indice":"RESTRITO POR COMISSÃO DECRESCENTE","comissao_percentual":5,"comissao_valor":0.84,"id":293640,"id_produto":4464,"id_venda":120031,"id_vendedor":3,"nome_produto":"SPRAY TEKBOND 350ML PRIME FUNDO","nome_vendedor":"JACQUELINE","vl_total":16.99},{"cliente":{"id":1,"nome":"CONSUMIDOR"},"comissao_indice":"RESTRITO POR COMISSÃO DECRESCENTE","comissao_percentual":1,"comissao_valor":0.13,"id":293642,"id_produto":6394,"id_venda":120031,"id_vendedor":3,"nome_produto":"ESPATULA TIGRE 06 CM 2,5","nome_vendedor":"JACQUELINE","vl_total":13.01}]]],"vl_desconto":1.96,"vl_produto":198.96,"vl_total":197}]`);
+
             const getRow = (comissao, index) => {
+
                 return `
-                    <div class="row ms-5 tb-row ${index % 2 === 0 ? '' : 'row-impar'}">
-                        <div class="col-1">
-                            
-                        </div>
+                    <div class="row g-0 ms-5 tb-row ${index % 2 === 0 ? '' : 'row-impar'}">
+                        <div class="col-1"></div>
                         <div class="col-3">${comissao.nome_produto}</div>
                         <div class="col-3">${comissao.comissao_indice}</div>
                         <div class="col text-end">${NumberFormatter.format(comissao.vl_total ? comissao.vl_total : 0.00)}</div>
-                        <div class="col text-end">${Percentformatter.format(comissao.comissao_percentual ? comissao.comissao_percentual/100 : 0.00)}</div>
+                        <div class="col text-end">${Percentformatter.format(comissao.comissao_percentual ? comissao.comissao_percentual / 100 : 0.00)}</div>
                         <div class="col text-end">${NumberFormatter.format(comissao.comissao_valor ? comissao.comissao_valor : 0.00)}</div>
                     </div>                
                 `;
             }
 
-            for (let v of obj) {
-                v.vendedor = new Map(v.vendedor)
+            fetch(`${apiUrl}comissao/get_comissao_decrescente`, {
+                method: 'GET',
+                headers: header,
+            }).then(async res => {
+                if (res.ok) {
+                    const obj = await res.json();
+                    const vendedorContainerMap = new Map();
 
-                for (let key of v.vendedor.keys()) {
-                    let comissoes = v.vendedor.get(key); // para cada key (id do vendedor) há uma lista de itens
-                    console.log(comissoes[0]);
-                    container.append(`
-                    <div class="row pb-0">
-                        <div class="col p-2" style="border: 0.05mm solid rgba(0, 0, 0, 0.3); font-weight: bold;">
-                            VENDEDOR: ${comissoes[0].nome_vendedor} (${comissoes[0].id_vendedor})
-                        </div>
-                    </div>
-                    <div class="row t-header">
-                        <div class="col text-start">Venda</div>
-                        <div class="col">Data saída</div>
-                        <div class="col-4 text-start">Cliente</div>
-                        <div class="col text-end">Total</div>
-                        <div class="col text-end">Percetual médio</div>
-                        <div class="col text-end">Valor comissão</div>
-                    </div>
-                    <div class="row">
-                        <div class="col text-start">${v.id}</div>
-                        <div class="col">${new Date(v.data_saida).toLocaleDateString()}</div>
-                        <div class="col-4 text-start">${v.cliente.nome}</div>
-                        <div class="col text-end">${NumberFormatter.format(v.vl_total ? v.vl_total : 0.00)}</div>
-                        <div class="col text-end">${'verificar'}</div>
-                        <div class="col text-end">${'verificar'}</div>
-                    </div>
-                    ${comissoes.length > 0 ? produtoHeader : ''}
-                    ${comissoes.map((c, index) => {
-                        return getRow(c, index)
-                    }).join('\n')}
-                    `)
+                    for (let v of obj) {
+                        v.vendedor = new Map(v.vendedor)
+                        for (let key of v.vendedor.keys()) {
+                            let comissoes = v.vendedor.get(key); // para cada key (id do vendedor) há uma lista de itens
+                            let sum = {
+                                total: 0.00,
+                                percentual: 0.00
+                            }
+
+                            if (!vendedorContainerMap.has(comissoes[0].id_vendedor)) {
+                                let aux = $(document.createElement('div'));
+                                aux.append(`                            
+                                <div class="row pb-0 g-0">
+                                    <div class="col p-2" style="border: 0.05mm solid rgba(0, 0, 0, 0.3); font-weight: bold;">
+                                         VENDEDOR: ${comissoes[0].nome_vendedor} (${comissoes[0].id_vendedor})
+                                     </div>
+                                 </div> 
+                                `)
+                                vendedorContainerMap.set(comissoes[0].id_vendedor, aux);
+                            }
+                            const vContainer = vendedorContainerMap.get(comissoes[0].id_vendedor);
+                            let rows = comissoes.map((c, index) => {
+                                sum.total += c.comissao_valor ? c.comissao_valor : 0;
+                                sum.percentual += c.comissao_percentual ? c.comissao_percentual / 100 : 0;
+                                return getRow(c, index, sum)
+                            }).join('\n')
+
+                            vContainer.append(`
+                            <div class="m-1" style="border: 0.05mm solid rgba(0, 0, 0, 0.2)">
+                                <div class="row t-header ms-2 mt-2 g-0">
+                                    <div class="col text-start">Venda</div>
+                                    <div class="col">Data saída</div>
+                                    <div class="col-4 text-start">Cliente</div>
+                                    <div class="col text-end">Total</div>
+                                    <div class="col text-end">Percetual médio</div>
+                                    <div class="col text-end">Valor comissão</div>
+                                </div>
+                                <div class="row ms-2 tb-row g-0">
+                                    <div class="col text-start">${v.id}</div>
+                                    <div class="col">${new Date(v.data_saida).toLocaleDateString()}</div>
+                                    <div class="col-4 text-start">${v.cliente.nome}</div>
+                                    <div class="col text-end">${NumberFormatter.format(v.vl_total ? v.vl_total : 0.00)}</div>
+                                    <div class="col text-end">${comissoes.length == 0 ? 0 : Percentformatter.format(sum.percentual / comissoes.length)}</div>
+                                    <div class="col text-end">${NumberFormatter.format(sum.total)}</div>
+                                </div>        
+                                  
+                                ${comissoes.length > 0 ? produtoHeader : ''}
+                                ${rows}
+                            </div>
+                            `);
+                            container.append(vContainer)
+                        }
+                    }
                 }
 
-
-            }
+            });
         }
     </script>
     <div class="card p-2 placeholder-glow">
@@ -260,9 +287,10 @@
 
         </div>
 
-        <div class="card-body --placeholder" id="card-body-container"
+        <div class="card-body --placeholder p-0" id="card-body-container"
             style="font-size: 8pt; border: 0.05mm solid #c1c1c1;">
 
+            <div id="pageFooter"></div>
         </div>
 
     </div>
