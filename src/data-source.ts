@@ -67,7 +67,7 @@ class FactoryConnection {
           password: value.password,
           database: value.database,
           synchronize: false,
-          logging: true,
+          logging: false,
           entities: [Empresas, Usuarios, Vendedor, Empresas, Venda, VendaItem, Devolucao, DevolucaoItem, FormaPagamento, GrupoProduto, Produto, Cliente, DevolucaoVendaViewm, DevolucaoItemView, VendaCanceladaViewm, VendaDuplicata],
           migrationsRun: false,
           subscribers: [],

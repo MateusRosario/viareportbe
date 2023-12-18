@@ -1,5 +1,7 @@
-import { ViewColumn, ViewEntity } from "typeorm";
+import { JoinColumn, OneToMany, OneToOne, ViewColumn, ViewEntity } from "typeorm";
 import { Devolucao } from "./devolucao";
+import { DevolucaoItem } from "./devolucao-item";
+import { Vendedor } from "./Vendedor";
 
 @ViewEntity({
   materialized: true,
@@ -24,8 +26,10 @@ export class DevolucaoVendaViewm {
   id: number;
   @ViewColumn()
   id_venda: string;
-  @ViewColumn()
-  id_vendedor: number;
+  // @ViewColumn()
+  @JoinColumn({ name: 'id_vendedor', referencedColumnName: 'id' })
+  @OneToOne(() => Vendedor, vend => vend.id)
+  id_vendedor: Vendedor;
   @ViewColumn()
   data: Date;
   @ViewColumn()
@@ -44,5 +48,7 @@ export class DevolucaoVendaViewm {
   id_fornecedor: number;
   @ViewColumn()
   nome_fornecedor: string;
-  
+  @OneToMany(() => DevolucaoItem, di => di.id_devolucao)
+  itens: DevolucaoItem[];
+
 }

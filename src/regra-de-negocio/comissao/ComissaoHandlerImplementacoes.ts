@@ -10,8 +10,11 @@ import { isValid } from "../../service/FunctionsServices";
 import { IComissaoAdapter, ComissaoHandlerBase, ComissaoHandlerInterface } from "./ComissaoHandler";
 import { ComissaoTipo, VendaItemComissao, VendaStatus } from "./VendaItemComissao";
 import { Venda } from "../../model/entity/Venda";
-import { Between, DataSource, Repository } from 'typeorm';
+import { Between, DataSource, Like, Repository } from 'typeorm';
 import { Empresas } from '../../model/entity/empresas';
+import { DevolucaoItemView } from '../../model/apoio/devolucao-item-view';
+import { DevolucaoVendaViewm } from '../../model/entity/devolucao-venda-viewm';
+import { Devolucao } from '../../model/entity/devolucao';
 
 export class ComissaoProdutoHandler extends ComissaoHandlerBase {
   protected ifHandler(item: IComissaoAdapter, valorComissao: VendaItemComissao): boolean {
@@ -205,14 +208,14 @@ export class ComissaoDecrescente {
     const repository = {
       empresa: connection.getRepository(Empresas),
       vendaItem: connection.getRepository(VendaItem),
-      venda: connection.getRepository(Venda)
+      venda: connection.getRepository(Venda),
     }
 
-    const where = { nf_uniao: false, gerado: 'SIM' };
-    where[`${fieldData}`] = Between(data.inicio, data.fim);
+    const where = { nf_uniao: false, gerado: Like('SIM') };
+    where[`${fieldData}`] = Between(data.inicio.toISOString().split('T')[0], data.fim.toISOString().split('T')[0]);
 
     if (idVendedor) {
-      where['id_vendedor'] = {id: idVendedor};
+      where['id_vendedor'] = { id: idVendedor };
     }
     if (idVenda) {
       where['id'] = idVenda;
@@ -227,10 +230,16 @@ export class ComissaoDecrescente {
         }
       };
     }
-    
+
+
     return new Promise(async (resolve, reject) => {
-      repository.venda.find({ where: where, loadEagerRelations: false, relations: ['itens', 'itens.id_vendedor', 'itens.id_produto', 'id_cliente', 'id_vendedor', 'id_forma'], order:{id_vendedor: {id: 'ASC'}} }).then(async vds => {
+
+
+      repository.venda.find({ where: where, loadEagerRelations: false, relations: ['itens', 'itens.id_vendedor', 'itens.id_produto', 'id_cliente', 'id_vendedor', 'id_forma'], order: { id_vendedor: { id: 'ASC' } } }).then(async vds => {
         let retorno: vendaMiniModel[] = [];
+        let sum = new Map<number, { total: number, comissao: number, desconto: number }>();
+        let devs = await this.BuscarDevolucoes(connection, data, idVendedor, idVenda, idCliente, idProduto);
+        
         for (let v of vds) {
           let miniVenda = {} as vendaMiniModel;
 
@@ -246,22 +255,31 @@ export class ComissaoDecrescente {
           }
           miniVenda.gerado = v.gerado;
           miniVenda.vendedor = new Map<number, VendaItemComissao[]>();
+
+
           for (let i of v.itens) {
             i.id_venda = v;
             let item = await this.calcular(i, connection);
-            
-            if(miniVenda.vendedor.has(item.id_vendedor)){
+
+            if (!sum.has(item.id_vendedor)) {
+              sum.set(item.id_vendedor, { total: 0, comissao: 0, desconto: 0 })
+            }
+
+            let aux = sum.get(item.id_vendedor);
+            aux.comissao = Decimal.add(aux.comissao, item.comissao_valor).toNumber();
+            aux.total = Decimal.add(aux.total, i.vl_total).toNumber();
+            aux.desconto = Decimal.add(aux.desconto, i.vl_desconto).toNumber();
+
+            if (miniVenda.vendedor.has(item.id_vendedor)) {
               miniVenda.vendedor.get(item.id_vendedor).push(item);
-            }else{
+            } else {
               miniVenda.vendedor.set(item.id_vendedor, [item]);
             }
           }
-          miniVenda.vendedor = Array.from(miniVenda.vendedor.entries())         
+          miniVenda.vendedor = Array.from(miniVenda.vendedor.entries())
           retorno.push(miniVenda);
         }
-        
-              
-        resolve(retorno);
+        resolve({ itens: retorno, sum: Array.from(sum.entries()) });
       }).catch(err => reject(err));
     })
   }
@@ -310,20 +328,100 @@ export class ComissaoDecrescente {
     })
   }
 
-  public createVendaBasica(venda: Venda) {
-    const ret = new Venda();
-    ret.id = venda.id;
-    ret.data_saida = venda.data_saida;
-    ret.data_cancelamento = venda.data_cancelamento;
-    ret.data_emissao = venda.data_emissao;
-    ret.vl_desconto = venda.vl_desconto;
-    ret.vl_produto = venda.vl_produto;
-    ret.vl_total = venda.vl_total;
-    ret.id_cliente = new Cliente();
-    ret.id_cliente.id = venda.id_cliente.id;
-    ret.id_cliente.nome = venda.id_cliente.nome;
+  private BuscarDevolucoes(connection: DataSource, data: { inicio: Date, fim: Date }, idVendedor?: number, idVenda?: number, idCliente?: number, idProduto?: number) {
+    const repository = connection.getRepository(DevolucaoVendaViewm);
+    const where = {};
+    where[`data`] = Between(data.inicio.toISOString().split('T')[0], data.fim.toISOString().split('T')[0]);
 
-    return ret;
+    if (idVendedor) {
+      where['id_vendedor'] = idVendedor;
+    }
+    if (idVenda) {
+      where['id'] = idVenda;
+    }
+    if (idCliente) {
+      where['id_cliente'] = idCliente;
+    }
+
+    return new Promise((resolve, reject) => {
+      repository.find({ where: where, relations: ['itens', 'id_vendedor', 'itens.id_produto'], loadEagerRelations: false })
+        .then(async devolucoes => {
+          let retorno = [];
+          for (let dv of devolucoes) {
+            for (let i of dv.itens) {
+              let comicao = await this.CalcularComissaoDevolucao(connection, i, { id: dv.id_vendedor.id, nome: dv.id_vendedor.nome });
+              comicao['id_venda'] = dv.id;
+
+              retorno.push(comicao)
+            }
+          }
+          resolve(retorno);
+        })
+    })
+  }
+
+  private CalcularComissaoDevolucao(connection: DataSource, item: DevolucaoItem, vendedor: { id: number, nome: string }) {
+    const repository = {
+      vendaItem: connection.getRepository(VendaItem),
+    }
+    return new Promise(async (resolve, reject) => {
+      let inter = undefined;
+      let ret = new VendaItemComissao();
+
+      if (ComissaoDecrescente.INTERVALO) {
+        inter = ComissaoDecrescente.INTERVALO;
+      } else {
+        inter = await connection.query<intervalo[]>(ComissaoDecrescente.INTERVALO_SQL);
+        ComissaoDecrescente.INTERVALO = inter;
+      }
+
+      let vendaItem = await repository.vendaItem.createQueryBuilder('vi')
+        .innerJoin(DevolucaoVendaViewm, 'd', 'vi.id_venda.id = d.id_venda')
+        .innerJoin(DevolucaoItem, 'di', 'd.id = di.id_devolucao')
+        .where('di.id = :id', { id: item.id }).getMany();
+      let aux = {
+        somaTotal: 0,
+        descontoTotal: 0,
+        quantidade: 0,
+        vl_unitario: 0
+      };
+
+      for (let vi of vendaItem) {
+        if (aux.vl_unitario === 0) aux.vl_unitario = vi.vl_unitario;
+
+        aux.quantidade += vi.quantidade;
+        aux.somaTotal += vi.vl_total;
+        aux.descontoTotal += vi.vl_desconto;
+      }
+      //calcula o desconto médio para caso de o item não ser agrupado ou haver devolução parcial
+      // console.log(aux, item.quantidade);
+      const descontoMedio = aux.quantidade > 0 ? Decimal.div(aux.descontoTotal, aux.quantidade).toNumber() : 0;
+      let vlCalculado = Decimal.mul(item.quantidade, aux.vl_unitario);
+      const pDesconto = Decimal.div(Decimal.mul(Decimal.mul(descontoMedio, aux.quantidade), 100), vlCalculado).toNumber();
+
+
+      const i: intervalo = inter.find((cm: intervalo) => cm.intervalo_1 <= pDesconto && cm.intervalo_2 >= pDesconto);
+      const comissao = Decimal.mul(vlCalculado, Decimal.div((i && i.comissao ? i.comissao : 0), 100));
+
+      ret.id = item.id;
+      ret.id_vendedor = vendedor.id;
+      ret.nome_vendedor = vendedor.nome.trim();
+      ret.comissao_indice = item.id_produto.gera_comissao ? ComissaoTipo.COMISSAO_DESCRESCENTE : ComissaoTipo.PRODUTO_COM_RESTRICAO;
+      ret.id_produto = item.id_produto.id;
+      ret.nome_produto = item.id_produto.nome;
+      ret.vl_total = vlCalculado.toNumber();
+
+      if (!item.id_produto.gera_comissao) {
+        ret.comissao_percentual = 0.00;
+        ret.comissao_valor = 0.00;
+        resolve(ret);
+        return;
+      }
+      ret.comissao_percentual = i && i.comissao ? i.comissao : 0;
+      ret.comissao_valor = comissao.equals(0) ? 0 : comissao.neg().toNumber();
+
+      resolve(ret);
+    })
   }
 }
 

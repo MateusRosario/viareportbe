@@ -222,11 +222,13 @@
                 if (res.ok) {
                     const obj = await res.json();
                     const vendedorContainerMap = new Map();
+                    let totais = new Map(obj.sum);
 
-                    for (let v of obj) {
-                        v.vendedor = new Map(v.vendedor)
+                    for (let v of obj.itens) {
+                        v.vendedor = new Map(v.vendedor);
                         for (let key of v.vendedor.keys()) {
                             let comissoes = v.vendedor.get(key); // para cada key (id do vendedor) há uma lista de itens
+                            comissoes = comissoes
                             let sum = {
                                 total: 0.00,
                                 percentual: 0.00
@@ -234,6 +236,7 @@
 
                             if (!vendedorContainerMap.has(comissoes[0].id_vendedor)) {
                                 let aux = $(document.createElement('div'));
+                                aux.id = `vendedor-${comissoes[0].id_vendedor}`;
                                 aux.append(`                            
                                 <div class="row pb-0 g-0">
                                     <div class="col p-2" style="border: 0.05mm solid rgba(0, 0, 0, 0.3); font-weight: bold;">
@@ -273,9 +276,24 @@
                                 ${rows}
                             </div>
                             `);
+                            // console.log(totais.get(key));
                             container.append(vContainer)
                         }
                     }
+                    vendedorContainerMap.forEach(el => {
+                        let total = totais.get(Number(el.id.replace('vendedor-', '')));
+                        if (total) {
+                            console.log(total);
+                            el.append(`
+                            <div class="row g-0" style="border-top: 0.05mm solid rgba(0, 0, 0, 0.4); background-color: #c1c1c1; text-transform: uppercase; font-weight: bold;">
+                                <div class="col"></div>
+                                <div class="col-auto me-5 text-end">Total: ${NumberFormatter.format(total.total)}</div>
+                                <div class="col-auto me-5 text-end">Desconto aplicado: ${NumberFormatter.format(total.desconto)}</div>
+                                <div class="col-auto text-end">Valor total comissão: ${NumberFormatter.format(total.comissao)}</div>
+                            </div>
+                            `)
+                        }
+                    })
                 }
 
             });
