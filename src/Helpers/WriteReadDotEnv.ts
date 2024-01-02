@@ -20,7 +20,7 @@ class ReadWritedotEnv {
 
     config({ path: root_directory });
 
-    console.log("\n\n\n\n\n\n\n\nenvFilePath ==== ", this.envFilePath, "\n\n\n\n\n\n");
+    console.log("\n\n\nenvFilePath ==== ", this.envFilePath, "\n\n");
 
     this.writter = this.fs.createWriteStream(this.envFilePath);
 
@@ -35,11 +35,13 @@ class ReadWritedotEnv {
     const ini = require("ini");
     const { sep } = require("path");
 
+    console.log('\n\n', sep, '\n\n');
+
     const diretorio = root_directory.split(sep);
 
     let viaerp = "";
 
-    for (let i = 0; i < 2; i++) {
+    for (let i = 0; i < diretorio.length && i < 2; i++) {
       viaerp = viaerp.concat(diretorio[i], sep);
     }
 
@@ -49,7 +51,11 @@ class ReadWritedotEnv {
 
     viaerp = viaerp.concat(sep, "ViaERP.ini");
 
+    console.log(viaerp, '\n');
+
     const config = ini.parse(this.fs.readFileSync(viaerp, "utf-8"));
+
+    console.log(config);
 
     let configDatabase: DataBaseConfig[] = [];
 

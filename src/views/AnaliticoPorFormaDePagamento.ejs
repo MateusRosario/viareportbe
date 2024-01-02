@@ -311,17 +311,23 @@
                 });
             };
             return new Promise(async (resolve, reject) => {
-                for (let i of vendedores) {
-                    const res = await getVendas(i);
+                for (let vendedor of vendedores) {
+                    
+                    const res = await getVendas(vendedor);
+                    
                     if (res.ok) {
                         let vds = await res.json();
+                        
                         const getVl = (value, flag) => {
+
+                            const isClienteValido = value.cliente && value.cliente.nome != undefined;
+
                             return `
                             <div class="row p-1 tb-row ${flag ? '' : 'row-impar'}">
                                     <div class="col">${value.id_venda}</div>
                                     <div class="col">${new Date(value.data_saida).toLocaleDateString()}</div>
                                     <div class="col">${value.cliente && value.cliente.id ? value.cliente.id : ''}</div>
-                                    <div class="col-4 text-start">${value.cliente && value.cliente.nome ? value.cliente.nome : (
+                                    <div class="col-4 text-start">${isClienteValido ? value.cliente.nome : (
                                     value.status === 'DEVOLVIDA' ? 'Venda devolvida produto: '.toUpperCase() + (value.nome_produto ? value.nome_produto : '') : ''
                                 )}</div>
                                     <div class="col text-end">${formatter.format(value.vl_total)}</div>
@@ -329,11 +335,12 @@
                             </div>
                             `
                         }
+
                         if (vds.content.length > 0) {
                             let tb = `
                             <div class="row text-start m-2 ms-0 p-2 ps-1" style="
                                 border: 0.05mm solid #c1c1c1;
-                            ">VENDEDOR:  ${i.nome} (id: ${i.id})</div>
+                            ">VENDEDOR:  ${vendedor.nome} (id: ${vendedor.id})</div>
                             <div class="row p-1 t-header">
                                 <div class="col">Id Venda</div>
                                 <div class="col">Data saída</div>
@@ -454,13 +461,17 @@
 
                             }
                             const getRow = (el) => {
+                                console.log('Value Err: ', vendedores.find((v) => el.id_vendedor === v.id))
+
+                                const vendedorRow = vendedores.find((v) => el.id_vendedor === v.id);
+
                                 return `
                                 <div class="row p-2  tb-row">
                                     <div class="col-1">${el.id_venda}</div>
                                     <div class="col-1 text-center ms-4">${el.id}</div>
                                     <div class="col-1">${el.id_cliente}</div>
                                     <div class="col-4 text-start">${el.nome_cliente}</div>
-                                    <div class="col-auto">${vendedores.find((v) => el.id_vendedor === v.id).nome}</div>
+                                    <div class="col-auto">${vendedorRow? vendedorRow.nome: '-----'}</div>
                                     <div class="col text-end">${formatter.format(el.vl_total)}</div>
                                 </div>
                                 <div class="row ms-3 t-header g-0">
@@ -484,7 +495,9 @@
                                 <div class="col text-end">Valor total</div>
                             </div>
                             `;
+
                             for (let r = 0; r < d.length; r++) {
+                                console.log('Value: ', d[r]);
                                 const i = await getItems(d[r]);
                                 tb = tb.concat(getRow(d[r])).concat('\n').concat(i);
 

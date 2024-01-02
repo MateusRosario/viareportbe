@@ -3,6 +3,7 @@ import { Venda } from "./../model/entity/Venda";
 import { getConnection } from "../data-source";
 import { Between, ViewColumn, ViewEntity } from "typeorm";
 import { VendaCanceladaViewm } from "../model/entity/venda-cancelada-viewm";
+
 export class EstatisticaVendaSQLBuilder {
   getGroupByVendedorSQL(aDataInicio: Date, aDataFim: Date, cnpj: string): string {
     let retorno;

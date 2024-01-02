@@ -77,6 +77,8 @@ export class ComissaoController {
     worker.BuscarEcalcular(conn, {inicio: new Date('2023-12-01'), fim: new Date('2023-12-15')}, 'data_saida', 6, undefined, undefined, undefined).then(vi=>{
       res.send(vi)
     })
+
+    
     // conn.getRepository(VendaItem).find({ where: { id_venda: { id: 120031 } } }).then(async vis => {
     //   let ret = [];
     //   for(let vi of vis){

@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { httpException } from "../model/exceptions/httpExceptions";
 
 const winston = require('winston');
+
 var options = {
     file: {
         level: 'debug',
@@ -18,8 +19,6 @@ var options = {
         colorize: true
     }
 }
-
-
 
 const logger = winston.createLogger({
     transports:[

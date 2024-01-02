@@ -236,9 +236,12 @@ export class ComissaoDecrescente {
 
 
       repository.venda.find({ where: where, loadEagerRelations: false, relations: ['itens', 'itens.id_vendedor', 'itens.id_produto', 'id_cliente', 'id_vendedor', 'id_forma'], order: { id_vendedor: { id: 'ASC' } } }).then(async vds => {
+        
         let retorno: vendaMiniModel[] = [];
         let sum = new Map<number, { total: number, comissao: number, desconto: number }>();
-        let devs = await this.BuscarDevolucoes(connection, data, idVendedor, idVenda, idCliente, idProduto);
+        //let devs = await this.BuscarDevolucoes(connection, data, idVendedor, idVenda, idCliente, idProduto);
+
+        
         
         for (let v of vds) {
           let miniVenda = {} as vendaMiniModel;
