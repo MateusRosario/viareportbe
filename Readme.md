@@ -2,12 +2,18 @@
 
 Serviço para gerar relatórios html que podem ser chamados por outras aplicações, abertos no navegador e impressos.
 
+## versões
+
+Projeto iniciado com npm 9.8.1 e node v18.18.2
+
+Testando utilização do npm 10.2.3 e node v20.10.0
+
 ### Executar
 
-ViaReport necessida do caminho do ViaERP que é procurado ao iniciar, caso esteja ocorrendo erro, pode ser passado como argumento:
+Ambiente de Desenvolvimento:
 
 ```
-npm start -- D:\
+npm run start-dev
 ```
 
 ### Referências de Dependências

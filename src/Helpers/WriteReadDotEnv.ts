@@ -1,32 +1,34 @@
 import { DataBaseConfig } from "../data-base-config";
 import { root_directory } from "../global";
-import { config } from "dotenv";
 
 var hash = { old: "", new: "" };
 
+/**
+ * @deprecated Componente a ser removido
+ */
 class ReadWritedotEnv {
-  private envFilePath;
+  // private envFilePath;
   private fs;
-  private os;
-  private path;
-  private writter;
+  // private os;
+  // private path;
+  // private writter;
 
   constructor() {
-    this.fs = require("fs");
-    this.os = require("os");
-    this.path = require("path");
+    // this.fs = require("fs");
+    // this.os = require("os");
+    // this.path = require("path");
 
-    this.envFilePath = root_directory + this.path.sep + ".env";
+    // this.envFilePath = root_directory + this.path.sep + ".env";
 
-    config({ path: root_directory });
+    // config({ path: root_directory });
 
-    console.log("\n\n\nenvFilePath ==== ", this.envFilePath, "\n\n");
+    // console.log("\n\n\nenvFilePath ==== ", this.envFilePath, "\n\n");
 
-    this.writter = this.fs.createWriteStream(this.envFilePath);
+    // this.writter = this.fs.createWriteStream(this.envFilePath);
 
-    this.writter.on("error", (error) => {
-      console.error(`An error occured while writing to the file. Error: ${error.message}`);
-    });
+    // this.writter.on("error", (error) => {
+    //   console.error(`An error occured while writing to the file. Error: ${error.message}`);
+    // });
 
     this.readViaERPini();
   }
@@ -133,7 +135,7 @@ export function syncConfigDataBase() {
  * 
  * @returns Retorna true se o ViaERP.ini foi atualizado desde a última vez que foi lido
  */
-export function reloadConnections(): boolean {
+export function needReloadConnections(): boolean {
   return hash.old != hash.new;
 }
 
