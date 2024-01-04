@@ -2,7 +2,7 @@ import { Vendedor } from './Vendedor';
 import { Venda } from './Venda';
 import { Produto } from './Produto';
 import { BaseEntity, Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
-import { NumericTransformer } from '../../service/FunctionsServices';
+import { NumericTransformer } from '../../services/FunctionsServices';
 
 @Entity({name: "venda"})
 export class VendaResumo extends BaseEntity {

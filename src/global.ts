@@ -40,7 +40,7 @@ export function encontrarDiretorioViaERP() {
             }
         }
 
-        console.log('Diretório do ViaERP Localizado: ', root_directory);
+        console.log('Diretório do ViaERP Localizado: ', root_directory, '\n\n');
     } catch (e) {
         console.log(`Algo Falhou`);
         console.error(e);

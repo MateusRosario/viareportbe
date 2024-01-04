@@ -1,7 +1,7 @@
 import { Decimal } from 'decimal.js';
-import { getConnection } from "../../data-source";
-import { somaVT } from '../../Helpers/ArithmeticOperators';
-import { isValid } from "../../service/FunctionsServices";
+import { getDBConnection } from "../../services/data-config-services/db-connection.service";
+import { somaVT } from '../../helpers/ArithmeticOperators';
+import { isValid } from "../../services/FunctionsServices";
 
 class test<T>{
     name: string;
@@ -107,7 +107,7 @@ export class Page<T>{
         try{
             let aux = '';       
                
-            let columns  = getConnection(cnpj).getMetadata(model.constructor.name).primaryColumns;
+            let columns  = getDBConnection(cnpj).getMetadata(model.constructor.name).primaryColumns;
             for (let i = 0; i < columns.length; i++) {
                 const element = columns[i];
                 aux += element.propertyName+','

@@ -1,7 +1,7 @@
 import { Response, Router } from 'express';
 import { DevolucaoItem } from './../model/entity/devolucao-item';
 import { BuildRote, Controller, TypedRequestBody, getByModel } from './common/ControllerBase';
-import { PageService } from '../service/PageService';
+import { PageService } from '../services/PageService';
 
 export class DevolucaoItemController implements Controller<DevolucaoItem>{
     getByModel(req: TypedRequestBody<DevolucaoItem>, res: Response<any, Record<string, any>>, next: any) {

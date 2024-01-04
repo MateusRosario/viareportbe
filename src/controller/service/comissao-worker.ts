@@ -4,9 +4,9 @@ import { VendaItem } from "../../model/entity/VendaItem";
 import { ComissaoAdapterProvider, getComissaoHandlerOrder } from "../../regra-de-negocio/comissao/ComissaoHandlerImplementacoes";
 import { VendaItemComissao, VendaStatus } from "../../regra-de-negocio/comissao/VendaItemComissao";
 import { BuidWhereByModel } from "../../repository/common/QueryUtils";
-import { getConnection } from "../../data-source";
-import { isValid } from "../../service/FunctionsServices";
-import { somaVT } from "../../Helpers/ArithmeticOperators";
+import { getDBConnection } from "../../services/data-config-services/db-connection.service";
+import { isValid } from "../../services/FunctionsServices";
+import { somaVT } from "../../helpers/ArithmeticOperators";
 
 var contador: number = 0;
 
@@ -99,7 +99,7 @@ export class ComissaoWorker {
 
     const comissaoHandler = getComissaoHandlerOrder();
 
-    let sqlVendaNormal = getConnection(cnpj)
+    let sqlVendaNormal = getDBConnection(cnpj)
       .getRepository(VendaItem)
       .createQueryBuilder("vi")
       .innerJoinAndSelect("vi.id_venda", "v")
@@ -108,7 +108,7 @@ export class ComissaoWorker {
       .innerJoinAndSelect("v.id_vendedor", "vend")
       .innerJoinAndSelect("v.id_forma", "fp")
       .innerJoinAndSelect("v.id_cliente", "c")
-      .where(BuidWhereByModel(getConnection(cnpj).getRepository(VendaItem).create(vendaItem), cnpj))
+      .where(BuidWhereByModel(getDBConnection(cnpj).getRepository(VendaItem).create(vendaItem), cnpj))
       .orderBy("v.data_saida asc, v.id asc, vi.id")
       .offset(pageNormais.getOffset())
       .limit(pageNormais.size);
@@ -160,7 +160,7 @@ export class ComissaoWorker {
     copyVendaItem.id_venda.cancelada = "SIM";
     copyVendaItem.id_venda.data_saida = null;
 
-    let sqlVendaCancelada = getConnection(cnpj)
+    let sqlVendaCancelada = getDBConnection(cnpj)
       .getRepository(VendaItem)
       .createQueryBuilder("vi")
       .innerJoinAndSelect("vi.id_venda", "v")
@@ -168,7 +168,7 @@ export class ComissaoWorker {
       .leftJoinAndSelect("p.id_grupo", "gp")
       .innerJoinAndSelect("v.id_vendedor", "vend")
       .innerJoinAndSelect("v.id_forma", "fp")
-      .where(BuidWhereByModel(getConnection(cnpj).getRepository(VendaItem).create(copyVendaItem), cnpj))
+      .where(BuidWhereByModel(getDBConnection(cnpj).getRepository(VendaItem).create(copyVendaItem), cnpj))
       .orderBy("v.data_saida asc, v.id");
 
     return await sqlVendaCancelada.getManyAndCount().then((value) => {
@@ -205,7 +205,7 @@ export class ComissaoWorker {
 
     const comissaoHandler = getComissaoHandlerOrder();
 
-    let sqlDevolucao = getConnection(cnpj)
+    let sqlDevolucao = getDBConnection(cnpj)
       .getRepository(DevolucaoItem)
       .createQueryBuilder("di")
       .innerJoinAndSelect("di.id_devolucao", "d")

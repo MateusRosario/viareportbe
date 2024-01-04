@@ -9,13 +9,13 @@ import { GrupoProduto } from "../model/entity/GrupoProduto";
 import { TypedRequestBody } from "./common/ControllerBase";
 import { NextFunction, Response, Request, Router } from "express";
 import { Cliente } from '../model/entity/Cliente';
-import { getConnection } from '../data-source';
+import { getDBConnection } from '../services/data-config-services/db-connection.service';
 import { ComissaoDecrescente } from '../regra-de-negocio/comissao/ComissaoHandlerImplementacoes';
 import { Worker } from 'cluster';
 
 export class ComissaoController {
   getComissaoPorItem(req: TypedRequestBody<VendaItem>, res: Response<any, Record<string, any>>, next: any): void {
-    let p = assembleModelAndPage(req.query, getConnection(req.headers['cnpj'] as string));
+    let p = assembleModelAndPage(req.query, getDBConnection(req.headers['cnpj'] as string));
 
     let work = new ComissaoWorker();
 
@@ -42,7 +42,7 @@ export class ComissaoController {
   }
 
   getComissaoGroupByIndice(req: TypedRequestBody<VendaItem>, res: Response<any, Record<string, any>>, next: any): void {
-    let p = assembleModelAndPage(req.query, getConnection(req.headers['cnpj'] as string));
+    let p = assembleModelAndPage(req.query, getDBConnection(req.headers['cnpj'] as string));
 
     let work = new ComissaoWorker();
 
@@ -73,7 +73,7 @@ export class ComissaoController {
 
   getComissaoDecrescente(req: Request, res: Response, next: NextFunction) {
     const worker = new ComissaoDecrescente();
-    const conn = getConnection(req.headers['cnpj'] as string);
+    const conn = getDBConnection(req.headers['cnpj'] as string);
     worker.BuscarEcalcular(conn, {inicio: new Date('2023-12-01'), fim: new Date('2023-12-15')}, 'data_saida', 6, undefined, undefined, undefined).then(vi=>{
       res.send(vi)
     })

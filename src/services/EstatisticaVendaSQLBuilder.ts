@@ -1,6 +1,6 @@
-import { VendaItem } from "./../model/entity/VendaItem";
-import { Venda } from "./../model/entity/Venda";
-import { getConnection } from "../data-source";
+import { VendaItem } from "../model/entity/VendaItem";
+import { Venda } from "../model/entity/Venda";
+import { getDBConnection } from "./data-config-services/db-connection.service";
 import { Between, ViewColumn, ViewEntity } from "typeorm";
 import { VendaCanceladaViewm } from "../model/entity/venda-cancelada-viewm";
 
@@ -8,7 +8,7 @@ export class EstatisticaVendaSQLBuilder {
   getGroupByVendedorSQL(aDataInicio: Date, aDataFim: Date, cnpj: string): string {
     let retorno;
 
-    let queryBuilder = getConnection(cnpj).createQueryBuilder();
+    let queryBuilder = getDBConnection(cnpj).createQueryBuilder();
 
     queryBuilder
       .select(
@@ -33,7 +33,7 @@ export class EstatisticaVendaSQLBuilder {
   }
 
  getVendaCanceladaSQL( cnpj ,aDataInicio: Date, aDataFim: Date, aIdVendedor?: number, aListagemById: Boolean = false): Promise<[VendaCanceladaViewm[], number]> {
-    let queryBuilder = getConnection(cnpj).createQueryBuilder<VendaCanceladaViewm>(VendaCanceladaViewm, "v");
+    let queryBuilder = getDBConnection(cnpj).createQueryBuilder<VendaCanceladaViewm>(VendaCanceladaViewm, "v");
     aListagemById
       ? queryBuilder.select("id")
       : queryBuilder.select(`SUM ( vl_produto )::numeric(14,2) AS produto_valor_bruto,

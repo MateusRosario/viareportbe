@@ -3,7 +3,7 @@ export enum DataBaseType {
     MYSQL = "mysql",
   }
 
-export class DataBaseConfig {
+export class DataBaseConfigModel {
   cnpj: string;
   type: DataBaseType;
   host: string;

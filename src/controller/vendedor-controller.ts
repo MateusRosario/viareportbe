@@ -1,9 +1,9 @@
 import { response, Router } from 'express';
-import { PageService } from './../service/PageService';
+import { PageService } from '../services/PageService';
 import { Response } from 'express';
 import { Vendedor } from './../model/entity/Vendedor';
 import { BuildRote, Controller, getByModel, TypedRequestBody } from './common/ControllerBase';
-import { getConnection } from '../data-source';
+import { getDBConnection } from '../services/data-config-services/db-connection.service';
 import { DataSource } from 'typeorm';
 import { VendedorService } from './service/VendedorService';
 export class VendedorController implements Controller<Vendedor> {

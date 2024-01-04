@@ -3,7 +3,7 @@ import { Any } from 'typeorm';
 import { Vendedor } from './../../model/entity/Vendedor';
 import { Produto } from './../../model/entity/Produto';
 import { VendaItem } from "../../model/entity/VendaItem";
-import { isValid } from "../../service/FunctionsServices";
+import { isValid } from "../../services/FunctionsServices";
 import { ComissaoTipo, VendaStatus, VendaItemComissao } from "./VendaItemComissao";
 
 

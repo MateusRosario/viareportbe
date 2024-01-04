@@ -1,7 +1,11 @@
-import { DataBaseConfig } from "../data-base-config";
-import { root_directory } from "../global";
+import { root_directory } from "../../global";
 
-class EnvHelper {
+/**
+ * Busca e lê configurações de ambiente no arquivos de configuração
+ * do ViaERP
+ * @author Mateus Rosario
+ */
+class EnvConfigsService {
     private _configs;
     private configsChanged = false;
 
@@ -47,9 +51,8 @@ class EnvHelper {
             }
 
             this._configs = configs;
+            
             // reload database configs
-            const dbConfigs = EnvHelper.dbConfigs(this._configs);
-            this.setEnvValue('CONFIGS', JSON.stringify(dbConfigs));
             return true;
         }
 
@@ -61,55 +64,33 @@ class EnvHelper {
         return this.loadConfigs();
     }
 
+    /**
+     * Verifica se foi encontrado mudanças na ultima leitura das 
+     * configs.
+     * 
+     * Ao chamar esta função, status de mudanças é resetado
+     * para sem mudanças.
+     */
     get needReloadConnections(): boolean {
-        return this.configsChanged;
+        if(this.configsChanged) {
+            this.configsChanged = false;
+            return true;
+        }
+
+        return false;
     }
 
     get configs(): any {
         return this._configs;
     }
-
-    getEnvValue(key: string): string {
-        return process.env[key];
-    }
-    
-    setEnvValue(key, value) {
-        process.env[key] = value;
-    }
-
-    private static dbConfigs(configs: any): DataBaseConfig[] {
-        let configsDatabase: DataBaseConfig[] = [];
-
-        for (let n = 0; n <= 4; n++) {
-
-            let index = (num) => {
-              if (num === 0) return "";
-              else if (num >= 1) return num + 1;
-            };
-
-            const conexaoExists = configs["Conexao"]["Hostname" + index(n)] !== undefined
-      
-            if (conexaoExists) {
-
-              configsDatabase.push(
-                new DataBaseConfig(
-                    configs["Conexao"]["Hostname" + index(n)] as string, 
-                    configs["Conexao"]["Database" + index(n)] as string, 
-                    configs["Conexao"]["Porta" + index(n)] as number)
-              );
-            }
-        }
-
-        return configsDatabase;
-    }
 }
 
-var envHelperSingleton = undefined;
+var envConfigsServiceSingleton = undefined;
 
-export default function envHelper(): EnvHelper {
-    if(envHelperSingleton == undefined) {
-        envHelperSingleton = new EnvHelper();
+export default function envConfigsService(): EnvConfigsService {
+    if(envConfigsServiceSingleton == undefined) {
+        envConfigsServiceSingleton = new EnvConfigsService();
     }
     
-    return envHelperSingleton;
+    return envConfigsServiceSingleton;
 }

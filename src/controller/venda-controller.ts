@@ -1,15 +1,15 @@
-import { PageService } from "../service/PageService";
+import { PageService } from "../services/PageService";
 import { Response, Request, Router, NextFunction } from "express";
 import { Venda } from "../model/entity/Venda";
 import { BuildRote, Controller, getByModel, TypedRequestBody } from "./common/ControllerBase";
-import { getConnection } from "../data-source";
+import { getDBConnection } from "../services/data-config-services/db-connection.service";
 import { VendaCanceladaViewm } from "../model/entity/venda-cancelada-viewm";
 import { FormaPagamento } from "../model/entity/FormaPagamento";
 import { VendaDuplicata } from "../model/entity/venda-duplicata";
 import { Between, In, MoreThan } from "typeorm";
 import { Vendedor } from "../model/entity/Vendedor";
 import { DevolucaoVendaViewm } from "../model/entity/devolucao-venda-viewm";
-import { isValid } from "../service/FunctionsServices";
+import { isValid } from "../services/FunctionsServices";
 
 export class VendaController implements Controller<Venda> {
   getByQuery(req: TypedRequestBody<{ query: string; countQuery: string; numberPage: number }>, res: Response<any, Record<string, any>>, next: any) {
@@ -21,7 +21,7 @@ export class VendaController implements Controller<Venda> {
   }
 
   getVendasorFormaDePagamento(req: Request, res: Response, next: NextFunction) {
-    const conn = getConnection(req.headers['cnpj'] as string); //.getRepository(VendaDuplicata);
+    const conn = getDBConnection(req.headers['cnpj'] as string); //.getRepository(VendaDuplicata);
 
     const filtros = {
       dataInicio: new Date(req.query.dataInicio as string),

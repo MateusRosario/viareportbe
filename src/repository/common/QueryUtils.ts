@@ -1,10 +1,10 @@
 import { Between, ColumnTypeUndefinedError, Equal, EqualOperator, ILike } from "typeorm";
-import { getConnection } from "../../data-source";
-import { isValid } from "../../service/FunctionsServices";
+import { getDBConnection } from "../../services/data-config-services/db-connection.service";
+import { isValid } from "../../services/FunctionsServices";
 
 export function BuidWhereByModel(model, cnpj: string) {
   let retorno = {};  
-  const conn = getConnection(cnpj);
+  const conn = getDBConnection(cnpj);
   conn.getMetadata(model.constructor.name).columns.forEach((element) => {
     let name = element.propertyName;
     let value = model[name];

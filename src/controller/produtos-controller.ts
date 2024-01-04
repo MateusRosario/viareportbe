@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { BuildRote, Controller, getByModel, TypedRequestBody } from './common/ControllerBase';
 import { Produto } from '../model/entity/Produto';
 import { Response } from 'express';
-import { PageService } from '../service/PageService';
+import { PageService } from '../services/PageService';
 
 export class ProdutoController implements Controller<Produto> {
     getByModel(req: TypedRequestBody<Produto>, res: Response<any, Record<string, any>>, next: any) {

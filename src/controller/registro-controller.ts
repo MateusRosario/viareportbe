@@ -1,7 +1,7 @@
 import { registro } from '../model/entity/registro';
 import { Response, Router } from "express";
 import { BuildRote, Controller, TypedRequestBody, getByModel } from "./common/ControllerBase";
-import { PageService } from '../service/PageService';
+import { PageService } from '../services/PageService';
 
 export class RegistroController implements Controller<registro> {
     getByModel(req: TypedRequestBody<registro>, res: Response, next: any) {

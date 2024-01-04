@@ -1,8 +1,8 @@
 import { Devolucao } from './../model/entity/devolucao';
 import { NextFunction, Request, Response, Router } from 'express';
 import { BuildRote, Controller, TypedRequestBody, getByModel } from './common/ControllerBase';
-import { PageService } from '../service/PageService';
-import { getConnection } from '../data-source';
+import { PageService } from '../services/PageService';
+import { getDBConnection } from '../services/data-config-services/db-connection.service';
 import { BuidWhereByModel } from '../repository/common/QueryUtils';
 import { BeforeInsert, Between, In } from 'typeorm';
 import { DevolucaoVendaViewm } from '../model/entity/devolucao-venda-viewm';
@@ -17,7 +17,7 @@ export class DevolucaoController implements Controller<Devolucao>{
         throw new Error('Method not implemented.');
     }
     getDevolucoesPorVendedor(req: Request, res: Response, next: NextFunction) {
-        const conn = getConnection(req.headers['cnpj'] as string);
+        const conn = getDBConnection(req.headers['cnpj'] as string);
         const dt = {
             ini: req.query['dataInicio'] as string,
             fim: req.query['dataFim'] as string

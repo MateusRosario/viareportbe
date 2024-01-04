@@ -1,8 +1,8 @@
 import express, { Request, Response } from "express";
 import routes from "./controller/common/routes";
-import factoryDataSource, { initDataSource, resyncDataSource } from "./data-source";
+import { dbConnectionService } from "./services/data-config-services/db-connection.service";
 import { encontrarDiretorioViaERP } from "./global";
-import envHelper from "./Helpers/EnvHelper";
+import envConfigsService from "./services/data-config-services/env-configs.service";
 import ejs = require('ejs');
 
 const app = express();
@@ -16,12 +16,17 @@ class ViaReportApp {
   async start() {
     this.enviromentLog();
 
-    this.initialize();
+    encontrarDiretorioViaERP();
 
-    await factoryDataSource().initialize();
+    // /** Carrega Variáveis de Ambiente ViaERP **/
+    // envHelper();
+
+    //initDataSource();
+
+    await dbConnectionService().initializeConnections();
 
     //BDs Conectados
-    console.log("Bancos de Dados Conectados");
+    console.log("Bancos de Dados Conectados\n\n");
 
     this.setAppConfigs();
 
@@ -30,25 +35,17 @@ class ViaReportApp {
     this.setRoutes();
 
     //Aplicação Iniciada
-    console.log("ViaReport Iniciado");
+    console.log("--- [[ViaReport Iniciado]] ---\n\n");
 
     app.listen(process.env.PORT);
   }
 
   enviromentLog() {
     if(process.env.PRODUCTION == 'TRUE') {
-      console.log("[[Iniciando em Ambiente de Produção]]\n\n");
+      console.log("--- [[Iniciando em Ambiente de Produção]] ---\n\n");
     } else {
-      console.log("[[Iniciando em Ambiente de Desenvolvimento]]]\n\n");
+      console.log("--- [[Iniciando em Ambiente de Desenvolvimento]] ---\n\n");
     }
-  }
-
-  initialize() {
-    encontrarDiretorioViaERP();
-
-    envHelper();
-
-    initDataSource();
   }
 
   setAppConfigs() {
@@ -77,10 +74,12 @@ class ViaReportApp {
     /**
      * Recarregar Conexões
      */
-    app.get('/reload', (req, res) => {
+    app.get('/reload', async (req, res) => {
       try {
-        envHelper().reloadConfigs();
-        if(envHelper().needReloadConnections) resyncDataSource();
+        envConfigsService().reloadConfigs();
+        if(envConfigsService().needReloadConnections) {
+          await dbConnectionService().resyncConnections();
+        }
         res.status(200).send("OK");
       } catch (error) {
         res.status(500).send("Não foi possível iniciar as conexões ao banco de dados. Erro:" + error["message"]);
@@ -89,10 +88,10 @@ class ViaReportApp {
 
     app.use("/v1", (req, res, next) => {
       if (req.headers["cnpj"]) {
-        console.log("cnpj: ", req.headers["cnpj"]);
+        //console.log("cnpj: ", req.headers["cnpj"]);
         return next();
       } else if (req.query['cnpj']) {
-        console.log("cnpj: ", req.query["cnpj"]);
+        //console.log("cnpj: ", req.query["cnpj"]);
         req.headers['cnpj'] = req.query['cnpj'].toString();
         return next();
       } else {

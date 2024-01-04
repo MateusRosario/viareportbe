@@ -1,6 +1,6 @@
 import { Response, Router } from "express";
-import { getConnection } from "../data-source";
-import { EstatisticaVendaSQLBuilder, GroupByVendedorValues } from "../service/EstatisticaVendaSQLBuilder";
+import { getDBConnection } from "../services/data-config-services/db-connection.service";
+import { EstatisticaVendaSQLBuilder, GroupByVendedorValues } from "../services/EstatisticaVendaSQLBuilder";
 import { TypedRequestBody } from "./common/ControllerBase";
 import { VendedorService } from "./service/VendedorService";
 
@@ -24,11 +24,11 @@ export class GestaoVendedoresController {
       const builder = new EstatisticaVendaSQLBuilder();
 
       let query = builder.getGroupByVendedorSQL(aDataInicio, aDataFim, req.headers["cnpj"] as string);
-      const exe1 = getConnection(req.headers["cnpj"] as string).query("REFRESH MATERIALIZED VIEW  public.devolucao_venda_viewm;");
-      const exe2 = getConnection(req.headers["cnpj"] as string).query("REFRESH MATERIALIZED VIEW  public.venda_cancelada_viewm;");
-      const exe3 = getConnection(req.headers["cnpj"] as string).query("REFRESH MATERIALIZED VIEW  public.venda_duplicata_credito_viewm;");
+      const exe1 = getDBConnection(req.headers["cnpj"] as string).query("REFRESH MATERIALIZED VIEW  public.devolucao_venda_viewm;");
+      const exe2 = getDBConnection(req.headers["cnpj"] as string).query("REFRESH MATERIALIZED VIEW  public.venda_cancelada_viewm;");
+      const exe3 = getDBConnection(req.headers["cnpj"] as string).query("REFRESH MATERIALIZED VIEW  public.venda_duplicata_credito_viewm;");
 
-      let repositoty = getConnection(req.headers["cnpj"] as string).getRepository<GroupByVendedorValues>(GroupByVendedorValues);
+      let repositoty = getDBConnection(req.headers["cnpj"] as string).getRepository<GroupByVendedorValues>(GroupByVendedorValues);
 
       Promise.all([exe1, exe2, exe3]);
 

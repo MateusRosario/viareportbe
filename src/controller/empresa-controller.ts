@@ -1,4 +1,4 @@
-import { PageService } from './../service/PageService';
+import { PageService } from '../services/PageService';
 import { Response, Router } from 'express';
 import { Empresas } from '../model/entity/empresas';
 import { BuildRote, Controller, getByModel, TypedRequestBody } from './common/ControllerBase';

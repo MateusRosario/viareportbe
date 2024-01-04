@@ -1,6 +1,6 @@
 import { FuncoesService } from './funcoes.service';
 import { DataSource } from "typeorm";
-import { getConnection } from "../../data-source";
+import { getDBConnection } from "../../services/data-config-services/db-connection.service";
 
 const locale = Intl.DateTimeFormat().resolvedOptions();
 
@@ -8,13 +8,13 @@ export class VendedorService {
     static funcoesService = new FuncoesService();
     
     getVendasPorVendedor(cnpj, data: { inicio: string, fim: string }): Promise<any> {
-        const con: DataSource = getConnection(cnpj as string);
+        const con: DataSource = getDBConnection(cnpj as string);
     
         return new Promise(async (res, rej) => {
 
-            await Promise.all([getConnection(cnpj).query("REFRESH MATERIALIZED VIEW  public.devolucao_venda_viewm;")
-            , getConnection(cnpj).query("REFRESH MATERIALIZED VIEW  public.venda_cancelada_viewm;")
-            , getConnection(cnpj).query("REFRESH MATERIALIZED VIEW  public.venda_duplicata_credito_viewm;")]);
+            await Promise.all([con.query("REFRESH MATERIALIZED VIEW  public.devolucao_venda_viewm;")
+            , con.query("REFRESH MATERIALIZED VIEW  public.venda_cancelada_viewm;")
+            , con.query("REFRESH MATERIALIZED VIEW  public.venda_duplicata_credito_viewm;")]);
 
             con.query<{ id: number, nome: string, bruto: number, desconto: number, item_cancelado: number, liquido: number }[]>(`
             SELECT COALESCE (vend.ID,0) AS ID,TRIM (COALESCE (vend.nome,'SEM VENDEDOR')) AS nome,SUM (vi.vl_total+vi.vl_desconto) :: FLOAT AS bruto,SUM (vi.vl_desconto) :: FLOAT AS desconto,SUM (CASE WHEN vi.cancelada='SIM' AND v.cancelada='NAO' THEN vi.vl_total ELSE 0.00 END) :: FLOAT AS item_cancelado, SUM(vi.vl_total)::FLOAT as liquido FROM venda AS v INNER JOIN venda_item AS vi ON (NOT v.nf_uniao AND v.ID=vi.id_venda) LEFT JOIN vendedor AS vend ON (v.id_vendedor=vend.ID) WHERE v.data_saida BETWEEN $1 AND $2 AND v.gerado='SIM' GROUP BY vend.ID,vend.nome ORDER BY SUM (CASE WHEN v.cancelada='NAO' AND vi.cancelada='NAO' THEN vi.vl_total ELSE 0.00 END) DESC;

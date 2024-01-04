@@ -26,7 +26,6 @@ const logger = winston.createLogger({
         new winston.transports.Console(options.console)
     ],
     exitOnError: false,
-    
 })
 
 logger.stream = {
@@ -45,7 +44,6 @@ module.exports = logger;
  * @description usar o metodo next(Função void que acompanha as requisições) em todas as classes controllers para efetuar o método do handler!
  */
 export function ErroHandle(err: httpException, req: Request, res: Response, next) {
-    
     res.locals.message = err.message;
     res.locals.error = req.app.get('env') === 'development' ? err : {};
 

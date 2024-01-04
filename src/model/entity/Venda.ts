@@ -7,7 +7,7 @@ import { Usuarios } from './Usuarios';
 import { VendaCanceladaViewm } from './venda-cancelada-viewm';
 import { DateTimezoneTransformer } from '../apoio/date-timezone-transformer';
 import { VendaItem } from './VendaItem';
-import { NumericTransformer } from '../../service/FunctionsServices';
+import { NumericTransformer } from '../../services/FunctionsServices';
 
 @Entity({ name: "venda" })
 export class Venda extends BaseEntity {

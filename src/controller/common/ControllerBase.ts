@@ -1,7 +1,7 @@
 import { Request, Response, Router, Express } from "express";
-import { PageService } from "../../service/PageService";
+import { PageService } from "../../services/PageService";
 import { Page } from "../../model/apoio/page";
-import { isValid } from "../../service/FunctionsServices";
+import { isValid } from "../../services/FunctionsServices";
 import { BaseEntity } from "typeorm";
 
 export interface TypedRequestBody<T> extends Express.Request, Request {
