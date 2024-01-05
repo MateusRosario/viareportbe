@@ -1,11 +1,10 @@
-import { response, Router } from 'express';
+import { Router } from 'express';
 import { PageService } from '../services/PageService';
 import { Response } from 'express';
 import { Vendedor } from './../model/entity/Vendedor';
 import { BuildRote, Controller, getByModel, TypedRequestBody } from './common/ControllerBase';
-import { getDBConnection } from '../services/data-config-services/db-connection.service';
-import { DataSource } from 'typeorm';
 import { VendedorService } from './service/VendedorService';
+
 export class VendedorController implements Controller<Vendedor> {
     getByModel(req: TypedRequestBody<Vendedor>, res: Response<any, Record<string, any>>, next: any) {
         return getByModel(req, res, next, new PageService(new Vendedor(), req.headers["cnpj"] as string))
@@ -38,18 +37,14 @@ export class VendedorController implements Controller<Vendedor> {
             if(err.message === 'Nada Encontrado nessa data!') return res.status(404).send([])
             return next(err)
         })
-
-
     }
-}
-
-export function dateFormat(date: Date) {
-    return `${date.getFullYear()}-${date.getMonth()}-${date.getDay()}`;
 }
 
 export const vendedorRoute = Router();
 const controller = new VendedorController();
 BuildRote(vendedorRoute, controller);
+
+//** data requests */
 vendedorRoute.get('/vendas', controller.getVendasPorVendedor)
 
 export default vendedorRoute;

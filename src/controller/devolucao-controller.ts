@@ -3,10 +3,8 @@ import { NextFunction, Request, Response, Router } from 'express';
 import { BuildRote, Controller, TypedRequestBody, getByModel } from './common/ControllerBase';
 import { PageService } from '../services/PageService';
 import { getDBConnection } from '../services/data-config-services/db-connection.service';
-import { BuidWhereByModel } from '../repository/common/QueryUtils';
-import { BeforeInsert, Between, In } from 'typeorm';
+import { Between, In } from 'typeorm';
 import { DevolucaoVendaViewm } from '../model/entity/devolucao-venda-viewm';
-import { DevolucaoItem } from '../model/entity/devolucao-item';
 import { DevolucaoItemView } from '../model/apoio/devolucao-item-view';
 
 export class DevolucaoController implements Controller<Devolucao>{
@@ -49,7 +47,9 @@ export const DevolucaoRouter = Router();
 
 const controller = new DevolucaoController()
 
+//** data requests */
 BuildRote(DevolucaoRouter, controller);
+
 DevolucaoRouter.get('/devolucoes_por_vendedor', controller.getDevolucoesPorVendedor)
 
 export default DevolucaoRouter;

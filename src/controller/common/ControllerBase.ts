@@ -2,10 +2,14 @@ import { Request, Response, Router, Express } from "express";
 import { PageService } from "../../services/PageService";
 import { Page } from "../../model/apoio/page";
 import { isValid } from "../../services/FunctionsServices";
-import { BaseEntity } from "typeorm";
 
 export interface TypedRequestBody<T> extends Express.Request, Request {
   body: T;
+}
+
+export interface Controller<T> {
+  getByModel(req: TypedRequestBody<T>, res: Response, next);
+  getByQuery(req: TypedRequestBody<{ query: string; countQuery: string }>, res: Response, next);
 }
 
 export function BuildPage<T>(req: TypedRequestBody<any>): Page<T> {
@@ -57,11 +61,6 @@ export function BuildPage<T>(req: TypedRequestBody<any>): Page<T> {
 export function BuildRote<S extends Controller<any>>(route: Router, cont: S) {
   route.post("/get_by_model", cont.getByModel);
   route.post("/get_by_query", cont.getByQuery);
-}
-
-export interface Controller<T> {
-  getByModel(req: TypedRequestBody<T>, res: Response, next);
-  getByQuery(req: TypedRequestBody<{ query: string; countQuery: string }>, res: Response, next);
 }
 
 export async function getByModel<T>(req: TypedRequestBody<T>, res: Response, next, service: PageService<T>) {

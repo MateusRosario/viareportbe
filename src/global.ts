@@ -1,8 +1,7 @@
 import { readdirSync } from 'fs'
 
-const nodeDiskInfo = require('node-disk-info')
+const nodeDiskInfo = require('node-disk-info');
 const path = require("path");
-
 
 export var root_directory = __dirname;
 

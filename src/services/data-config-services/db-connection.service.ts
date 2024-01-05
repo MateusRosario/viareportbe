@@ -111,7 +111,12 @@ class DBConnectionService {
               this.connections.splice(i, 1);
             });
           }
-          resolve();
+
+          if(this.dataBaseConfigs.length > 0) {
+            resolve();
+          } else {
+            reject();
+          }
         });
       } else {
         reject();
@@ -150,24 +155,24 @@ class DBConnectionService {
   private static dbConfigs(configs: any): DataBaseConfigModel[] {
     let configsDatabase: DataBaseConfigModel[] = [];
 
-    for (let n = 0; n <= 4; n++) {
+    for (let conIndex = 0; conIndex <= 4; conIndex++) {
+        
+      let numSufix = (index) => {
+        if (index === 0) return "";
+        else if (index >= 1) return index + 1;
+      };
 
-        let index = (num) => {
-          if (num === 0) return "";
-          else if (num >= 1) return num + 1;
-        };
+      const conexaoExists = configs["Conexao"]["Hostname" + numSufix(conIndex)] !== undefined
 
-        const conexaoExists = configs["Conexao"]["Hostname" + index(n)] !== undefined
-  
-        if (conexaoExists) {
+      if (conexaoExists) {
 
-          configsDatabase.push(
-            new DataBaseConfigModel(
-                configs["Conexao"]["Hostname" + index(n)] as string, 
-                configs["Conexao"]["Database" + index(n)] as string, 
-                configs["Conexao"]["Porta" + index(n)] as number)
-          );
-        }
+        configsDatabase.push(
+          new DataBaseConfigModel(
+              configs["Conexao"]["Hostname" + numSufix(conIndex)] as string, 
+              configs["Conexao"]["Database" + numSufix(conIndex)] as string, 
+              configs["Conexao"]["Porta" + numSufix(conIndex)] as number)
+        );
+      }
     }
 
     return configsDatabase;

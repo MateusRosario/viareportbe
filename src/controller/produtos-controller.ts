@@ -16,7 +16,9 @@ export class ProdutoController implements Controller<Produto> {
 }
 
 export const ProdutoRoute = Router();
-const controller = new ProdutoController()
+
+const controller = new ProdutoController();
+
 BuildRote(ProdutoRoute, controller); // nescessário p/ criar os EndPoints
 
 export default ProdutoRoute;

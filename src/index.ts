@@ -1,5 +1,5 @@
 import express, { Request, Response } from "express";
-import routes from "./controller/common/routes";
+import routes from "./routes";
 import { dbConnectionService } from "./services/data-config-services/db-connection.service";
 import { encontrarDiretorioViaERP } from "./global";
 import envConfigsService from "./services/data-config-services/env-configs.service";
@@ -16,17 +16,7 @@ class ViaReportApp {
   async start() {
     this.enviromentLog();
 
-    encontrarDiretorioViaERP();
-
-    // /** Carrega Variáveis de Ambiente ViaERP **/
-    // envHelper();
-
-    //initDataSource();
-
-    await dbConnectionService().initializeConnections();
-
-    //BDs Conectados
-    console.log("Bancos de Dados Conectados\n\n");
+    await this.initializeDataBaseConnections();
 
     this.setAppConfigs();
 
@@ -46,6 +36,16 @@ class ViaReportApp {
     } else {
       console.log("--- [[Iniciando em Ambiente de Desenvolvimento]] ---\n\n");
     }
+  }
+
+  async initializeDataBaseConnections(): Promise<void> {
+    return dbConnectionService().initializeConnections().then(() => {
+      //BDs Conectados
+      console.log("Bancos de Dados Conectados\n\n");
+    }).catch(() => {
+      //Nenhum Banco Conectado
+      console.error('Nenhuma conexão com banco foi estabelecida!\n\n');
+    });
   }
 
   setAppConfigs() {

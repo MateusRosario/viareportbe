@@ -31,7 +31,7 @@ export class VendedorService {
                         i['vendaDescontoDevolucao'] = invalidNumber(devolucao[0].desconto);
 
 
-                        const cancelada = await con.query<{ bruto_produto: number, bruto_servico: number, desconto: number, liquido: number }[]>(`SELECT SUM (vl_produto) :: FLOAT AS bruto_produto, SUM (vl_servico) :: FLOAT AS bruto_servico, SUM (vl_desconto) :: FLOAT AS desconto,SUM (vl_total) :: FLOAT AS liquido FROM venda_cancelada_viewm WHERE data_cancelamento :: DATE BETWEEN $1 AND $2 AND id_vendedor= $3`, [data.inicio, data.fim, i.id])
+                        const cancelada = await con.query<{ bruto_produto: number, bruto_servico: number, desconto: number, liquido: number }[]>(`SELECT SUM (vl_produto) :: FLOAT AS bruto_produto, SUM (vl_servico) :: FLOAT AS bruto_servico, SUM (vl_desconto) :: FLOAT AS desconto,SUM (vl_total) :: FLOAT AS liquido FROM venda_cancelada_viewm WHERE data_saida :: DATE BETWEEN $1 AND $2 AND id_vendedor= $3`, [data.inicio, data.fim, i.id])
 
                         i['vendaCancelada'] = invalidNumber(FuncoesService.somar(cancelada[0].bruto_produto, cancelada[0].bruto_servico, -4));
                         i['vendaDescontoCancelamento'] = invalidNumber(cancelada[0].desconto);
@@ -48,11 +48,10 @@ export class VendedorService {
 
                         i['liquido'] = FuncoesService.subtrair(FuncoesService.subtrair(i['liquido'], cancelada[0].liquido, -4), devolucao[0].liquido, -4);
                         i['itemCancelado'] = i.item_cancelado;
+
                     }
 
-                    // console.log(response[0]);
-
-
+                    
                     res(response)
                 } else {
                     rej(new Error('Nada Encontrado nessa data!'))

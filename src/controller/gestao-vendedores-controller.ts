@@ -6,6 +6,34 @@ import { VendedorService } from "./service/VendedorService";
 
 
 export class GestaoVendedoresController {
+
+  render(req, res) {
+    res.render('GestaoVendedoresMain', { cnpj: req.headers["cnpj"] as string });
+  }
+
+  async renderVendedorDashBoardComponent(req, res) {
+
+    if (req.query["dataInicio"] === undefined || req.query["dataFim"] === undefined) {
+      res.status(400).send('Data não informada');
+      throw new Error('Data não informada')
+    }
+
+    let data: {
+      inicio: string,
+      fim: string
+    } = {
+      inicio: req.query["dataInicio"],
+      fim: req.query["dataFim"]
+    };
+
+    const vendasResult = await new VendedorService().getVendasPorVendedor(req.headers["cnpj"], data);
+    res.render('VendedorDashBoard', { values: vendasResult });
+  }
+
+  async renderComissaoComponent(req, res) {
+    res.render("Comissao", { cnpj: req.headers["cnpj"] });
+  }
+
   // /vendas-group-by-vendedor?dataSaidaInicio=2023-04-01&dataSaidaFim=2023-04-30
   getRowsGroupByVendedor(req: TypedRequestBody<any>, res: Response<any, Record<string, any>>, next: any) {
     let aDataInicio: Date;
@@ -43,45 +71,16 @@ export class GestaoVendedoresController {
   }
 }
 
+const gestaoVendedoresController = new GestaoVendedoresController();
+
 export const gestaoVendedoresRouter = Router();
 
-const controller = new GestaoVendedoresController();
+//** data requests */
+gestaoVendedoresRouter.get("/vendas-group-by-vendedor", gestaoVendedoresController.getRowsGroupByVendedor);
 
-gestaoVendedoresRouter.get("/vendas-group-by-vendedor", controller.getRowsGroupByVendedor);
-gestaoVendedoresRouter.get("/comissao_view", (req, res) => {
-  res.render("Comissao", { cnpj: req.headers["cnpj"] });
-});
-
-const locale = Intl.DateTimeFormat().resolvedOptions();
-
-
-gestaoVendedoresRouter.get("/dashbaord", async (req, res) => {
-
-  let data: {
-    inicio: string,
-    fim: string
-  } = {
-    inicio: undefined,
-    fim: undefined
-  };
-
-  if (req.query["dataInicio"] === undefined || req.query["dataFim"] === undefined) {
-    res.status(400).send('Data não informada');
-    throw new Error('Data não informada')
-  }
-
-
-  data.inicio = req.query["dataInicio"] as string;
-  data.fim = req.query["dataFim"] as string;
-
-  const r = await new VendedorService().getVendasPorVendedor(req.headers["cnpj"], data)
-  const f = r[0]
-  res.render('VendedorDashBoard', { values: r })
-});
-
-
-gestaoVendedoresRouter.get('', (req, res) => {
-  res.render('GestaoVendedoresMain', { cnpj: req.headers["cnpj"] as string })
-})
+//** renders requests */
+gestaoVendedoresRouter.get('', gestaoVendedoresController.render);
+gestaoVendedoresRouter.get("/dashbaord", gestaoVendedoresController.renderVendedorDashBoardComponent);
+gestaoVendedoresRouter.get("/comissao_view", gestaoVendedoresController.renderComissaoComponent);
 
 export default gestaoVendedoresRouter;

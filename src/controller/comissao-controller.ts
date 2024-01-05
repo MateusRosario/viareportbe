@@ -11,11 +11,24 @@ import { NextFunction, Response, Request, Router } from "express";
 import { Cliente } from '../model/entity/Cliente';
 import { getDBConnection } from '../services/data-config-services/db-connection.service';
 import { ComissaoDecrescente } from '../regra-de-negocio/comissao/ComissaoHandlerImplementacoes';
-import { Worker } from 'cluster';
 
 export class ComissaoController {
+
+  renderAnaliticoPorFormaDePagamento(req: Request, res: Response, next: NextFunction) {
+    res.render('AnaliticoPorFormaDePagamento',
+      {
+        cnpj: req.headers['cnpj'], idVenda: req.query.idVenda ? req.query.idVenda : '',
+        idProduto: req.query.idProduto ? req.query.idProduto : '',
+        idCliente: req.query.idCliente ? req.query.idCliente : '',
+        idGrupo: req.query.idGrupo ? req.query.idGrupo : '',
+        idVendedor: req.query.idVendedor ? req.query.idVendedor : '',
+        dataInicio: req.query.dataInicio ? req.query.dataInicio : '',
+        dataFim: req.query.dataFim ? req.query.dataFim : '',
+      })
+  }
+
   getComissaoPorItem(req: TypedRequestBody<VendaItem>, res: Response<any, Record<string, any>>, next: any): void {
-    let p = assembleModelAndPage(req.query, getDBConnection(req.headers['cnpj'] as string));
+    let p = ComissaoController.assembleModelAndPage(req.query, getDBConnection(req.headers['cnpj'] as string));
 
     let work = new ComissaoWorker();
 
@@ -42,7 +55,7 @@ export class ComissaoController {
   }
 
   getComissaoGroupByIndice(req: TypedRequestBody<VendaItem>, res: Response<any, Record<string, any>>, next: any): void {
-    let p = assembleModelAndPage(req.query, getDBConnection(req.headers['cnpj'] as string));
+    let p = ComissaoController.assembleModelAndPage(req.query, getDBConnection(req.headers['cnpj'] as string));
 
     let work = new ComissaoWorker();
 
@@ -55,20 +68,6 @@ export class ComissaoController {
         res.status(500).json(erro["message"]);
       }
     );
-  }
-
-  getAnaliticoPorFormaDePagamento(req: Request, res: Response, next: NextFunction) {
-    res.render('AnaliticoPorFormaDePagamento',
-      {
-        cnpj: req.headers['cnpj'], idVenda: req.query.idVenda ? req.query.idVenda : '',
-        idProduto: req.query.idProduto ? req.query.idProduto : '',
-        idCliente: req.query.idCliente ? req.query.idCliente : '',
-        idGrupo: req.query.idGrupo ? req.query.idGrupo : '',
-        idVendedor: req.query.idVendedor ? req.query.idVendedor : '',
-        dataInicio: req.query.dataInicio ? req.query.dataInicio : '',
-        dataFim: req.query.dataFim ? req.query.dataFim : '',
-      })
-
   }
 
   getComissaoDecrescente(req: Request, res: Response, next: NextFunction) {
@@ -88,86 +87,89 @@ export class ComissaoController {
     // }).catch(err => next(err))
 
   }
-}
 
-function assembleModelAndPage(params, conn): { vendaItem: VendaItem; page: Page<VendaItem>; todasAsPaginas: Boolean } {
-  //  console.log("assembleModelAndPage ", params);
-
-  let dataInicio: Date;
-  let dataFim: Date;
-  let idVendedor;
-  let sizePage;
-  let numberPage;
-  let idProduto;
-  let idGrupo;
-  let todasAsPaginas: Boolean;
-
-  if (!params["dataInicio"] || !params["dataFim"]) throw new TypeError("Deve obrigatoriamente informar a data de inicio(dataInicio) e fim(dataFim) no formato ISO(YYYY-MM-DDThh:mm:ss)");
-
-  try {
-    dataInicio = new Date(params.dataInicio as string);
-    dataFim = new Date(params.dataFim as string);
-  } catch (error) {
-    throw new TypeError("Não foi possível realizar o parse da data informada. Causa: " + error["message"]);
-  }
-
-  idVendedor = params.idVendedor;
-  sizePage = params.sizePage ? params.sizePage : 50;
-  numberPage = params.numberPage ? params.numberPage : 0;
-  idProduto = params.idProduto || null;
-  idGrupo = params.idGrupo || null;
-
-  todasAsPaginas = params.todasAsPaginas ? params.todasAsPaginas : false;
-
-  if (!dataInicio || !dataFim) throw new TypeError("Deve obrigatoriamente informar a data de inicio(dataInicio) e fim(dataFim) no formato ISO(YYYY-MM-DDThh:mm:ss)");
-
-  if (!idVendedor) throw new TypeError("Deve obrigatoriamente informar o código do vendedor.");
-
-  let vendaItem = new VendaItem();
-
-  let venda = new Venda();
-
-  venda.nf_uniao = false;
-  venda.gerado = "SIM";
-  venda.id_vendedor = new Vendedor();
-  venda.id_vendedor.id = parseInt(idVendedor);
-  venda.data_saida = new Date(JSON.stringify(dataInicio));
-  venda.data_saida["inicio"] = dataInicio;
-  venda.data_saida["fim"] = dataFim;
-  venda.id_cliente = params.idCliente ? conn.getRepository(Cliente).create({ id: parseInt(params.idCliente) }) : undefined;
-
-  if (idProduto) {
-    vendaItem.id_produto = new Produto();
-    vendaItem.id_produto.id = parseInt(idProduto);
-  }
-  if (idGrupo) {
-    if (idProduto) {
-      vendaItem.id_produto.id_grupo = new GrupoProduto();
-      vendaItem.id_produto.id_grupo.id = parseInt(idGrupo);
-    } else {
-      vendaItem.id_produto = new Produto();
-      vendaItem.id_produto.id_grupo = new GrupoProduto();
-      vendaItem.id_produto.id_grupo.id = parseInt(idGrupo);
+  static assembleModelAndPage(params, conn): { vendaItem: VendaItem; page: Page<VendaItem>; todasAsPaginas: Boolean } {
+    //  console.log("assembleModelAndPage ", params);
+  
+    let dataInicio: Date;
+    let dataFim: Date;
+    let idVendedor;
+    let sizePage;
+    let numberPage;
+    let idProduto;
+    let idGrupo;
+    let todasAsPaginas: Boolean;
+  
+    if (!params["dataInicio"] || !params["dataFim"]) throw new TypeError("Deve obrigatoriamente informar a data de inicio(dataInicio) e fim(dataFim) no formato ISO(YYYY-MM-DDThh:mm:ss)");
+  
+    try {
+      dataInicio = new Date(params.dataInicio as string);
+      dataFim = new Date(params.dataFim as string);
+    } catch (error) {
+      throw new TypeError("Não foi possível realizar o parse da data informada. Causa: " + error["message"]);
     }
+  
+    idVendedor = params.idVendedor;
+    sizePage = params.sizePage ? params.sizePage : 50;
+    numberPage = params.numberPage ? params.numberPage : 0;
+    idProduto = params.idProduto || null;
+    idGrupo = params.idGrupo || null;
+  
+    todasAsPaginas = params.todasAsPaginas ? params.todasAsPaginas : false;
+  
+    if (!dataInicio || !dataFim) throw new TypeError("Deve obrigatoriamente informar a data de inicio(dataInicio) e fim(dataFim) no formato ISO(YYYY-MM-DDThh:mm:ss)");
+  
+    if (!idVendedor) throw new TypeError("Deve obrigatoriamente informar o código do vendedor.");
+  
+    let vendaItem = new VendaItem();
+  
+    let venda = new Venda();
+  
+    venda.nf_uniao = false;
+    venda.gerado = "SIM";
+    venda.id_vendedor = new Vendedor();
+    venda.id_vendedor.id = parseInt(idVendedor);
+    venda.data_saida = new Date(JSON.stringify(dataInicio));
+    venda.data_saida["inicio"] = dataInicio;
+    venda.data_saida["fim"] = dataFim;
+    venda.id_cliente = params.idCliente ? conn.getRepository(Cliente).create({ id: parseInt(params.idCliente) }) : undefined;
+  
+    if (idProduto) {
+      vendaItem.id_produto = new Produto();
+      vendaItem.id_produto.id = parseInt(idProduto);
+    }
+    if (idGrupo) {
+      if (idProduto) {
+        vendaItem.id_produto.id_grupo = new GrupoProduto();
+        vendaItem.id_produto.id_grupo.id = parseInt(idGrupo);
+      } else {
+        vendaItem.id_produto = new Produto();
+        vendaItem.id_produto.id_grupo = new GrupoProduto();
+        vendaItem.id_produto.id_grupo.id = parseInt(idGrupo);
+      }
+    }
+  
+    let page = new Page<VendaItem>();
+    page.content = [];
+    page.number = parseInt(numberPage);
+    page.size = parseInt(sizePage);
+  
+    vendaItem.id_venda = venda;
+    //  // console.log(vendaItem, '\n', page)
+    return { vendaItem, page, todasAsPaginas };
   }
-
-  let page = new Page<VendaItem>();
-  page.content = [];
-  page.number = parseInt(numberPage);
-  page.size = parseInt(sizePage);
-
-  vendaItem.id_venda = venda;
-  //  // console.log(vendaItem, '\n', page)
-  return { vendaItem, page, todasAsPaginas };
 }
 
 export const ComissaoRoute = Router();
 
 const controller = new ComissaoController();
 
+//** data requests */
 ComissaoRoute.get("/get_comissao_por_item", controller.getComissaoPorItem);
 ComissaoRoute.get("/get_comissao_group_by_indice", controller.getComissaoGroupByIndice);
-ComissaoRoute.get("/get_analitico_por_forma_de_pagamento", controller.getAnaliticoPorFormaDePagamento);
 ComissaoRoute.get('/get_comissao_decrescente', controller.getComissaoDecrescente);
+
+//** renders requests */
+ComissaoRoute.get("/get_analitico_por_forma_de_pagamento", controller.renderAnaliticoPorFormaDePagamento);
 
 export default ComissaoRoute;

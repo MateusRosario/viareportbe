@@ -16,8 +16,8 @@ export class VendaItemController implements Controller<VendaItem> {
 
 export const VendaItemRoute = Router();
 
-const controller = new VendaItemController();
+const vendaItemController = new VendaItemController();
 
-BuildRote(VendaItemRoute, new VendaItemController());
+BuildRote(VendaItemRoute, vendaItemController);
 
 export default VendaItemRoute;

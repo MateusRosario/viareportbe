@@ -1,6 +1,6 @@
 {
   "name": "viareport",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "Template de api rest usando node e typeORM",
   "main": "index.js",
   "scripts": {

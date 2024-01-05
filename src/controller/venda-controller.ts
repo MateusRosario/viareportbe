@@ -9,7 +9,6 @@ import { VendaDuplicata } from "../model/entity/venda-duplicata";
 import { Between, In, MoreThan } from "typeorm";
 import { Vendedor } from "../model/entity/Vendedor";
 import { DevolucaoVendaViewm } from "../model/entity/devolucao-venda-viewm";
-import { isValid } from "../services/FunctionsServices";
 
 export class VendaController implements Controller<Venda> {
   getByQuery(req: TypedRequestBody<{ query: string; countQuery: string; numberPage: number }>, res: Response<any, Record<string, any>>, next: any) {
@@ -73,16 +72,16 @@ export class VendaController implements Controller<Venda> {
     }).catch(err => next(err))
 
     // repo.find({where: {data: MoreThan( new Date('2023-12-01'))}}).then(r => res.send(r))
-
   }
-
 }
+
+const controller = new VendaController();
 
 export const VendaRoute = Router();
 
-const controller = new VendaController();
 BuildRote(VendaRoute, controller); // nescessário p/ criar os EndPoints
 
+//** data requests */
 VendaRoute.get('/get_vendas_por_forma_de_pagamento', controller.getVendasorFormaDePagamento)
 
 export default VendaRoute;
