@@ -7,6 +7,7 @@ import { BuidWhereByModel } from "../../repository/common/QueryUtils";
 import { getDBConnection } from "../../services/data-config-services/db-connection.service";
 import { isValid } from "../../services/FunctionsServices";
 import { somaVT } from "../../helpers/ArithmeticOperators";
+import { DataSource } from "typeorm";
 
 var contador: number = 0;
 
@@ -17,9 +18,11 @@ export class ComissaoWorker {
     this.meuContador = contador;
     contador++;
   }
-  async getComissaoPorItem(cnpj: string, vendaItem: VendaItem, numberPage: number = 0, sizePage: number = 50): Promise<Page<VendaItemComissao>> {
+  async getComissaoPorItem(cnpj: string, vendaItem: VendaItem, numberPage: number = 0, sizePage: number = 50, all = false): Promise<Page<VendaItemComissao>> {
 //    console.log("===========================contador(getComissaoPorItem): ", this.meuContador);
-    return this.getComissaoListaNormal(cnpj, sizePage, numberPage, vendaItem);
+    return this.getComissaoLista(cnpj, sizePage, numberPage, vendaItem, undefined, all);
+
+    // return await this.concatCanceladasAndDevolvidas(cnpj, sizePage, numberPage, vendaItem, itens);
   }
 
   async getComissaoPorIndice(vendaItem: VendaItem, cnpj: string, retorno: Map<string, ComissaoIndiceDicitionary>): Promise<Map<string, ComissaoIndiceDicitionary>> {
@@ -53,6 +56,32 @@ export class ComissaoWorker {
     return map;
   }
 
+  async getComissaoLista(cnpj: string, sizePage: number, numberPage: number, vendaItem: VendaItem, page: Page<VendaItemComissao>, all: boolean): Promise<Page<VendaItemComissao>> {
+
+    // Inicialização da página
+    if (!isValid(page)) {
+      page = new Page<VendaItemComissao>();
+      page.content = [];
+    }
+
+    // Carregando primeira página
+    await this.getComissaoListaNormal(cnpj, sizePage, numberPage, vendaItem).then((lista) => {
+      page.number = lista.number;
+      page.content = page.content.concat(lista.content);
+      page.length = lista.length;
+      page.size = lista.size;
+    });
+
+    // Carrega páginas restantes por recursão ou carrega devoluções e cancelamentos
+    if(all && page.hasMorePages()) {
+      return await this.getComissaoLista(cnpj, sizePage, page.getNextPage().number, vendaItem, page, all);
+    } else if(all || !page.hasMorePages()) {
+      return await this.concatCanceladasAndDevolvidas(cnpj, sizePage, numberPage, vendaItem, page);
+    } else {
+      return page;
+    }
+  }
+
   async getComissaoListaTotal(cnpj: string, sizePage: number, numberPage: number, vendaItem: VendaItem, retorno: Page<VendaItemComissao>): Promise<Page<VendaItemComissao>> {
 //    console.log("===========================contador(getComissaoListaTotal): ", this.meuContador);
     if (!isValid(retorno)) {
@@ -69,23 +98,15 @@ export class ComissaoWorker {
       retorno.size = lista.size;
     });
 
+    let list;
     if (retorno.hasMorePages()) {
 //      console.log("TERM MAIS PÁGINAS");
-      return await this.getComissaoListaTotal(cnpj, sizePage, retorno.getNextPage().number, vendaItem, retorno);
+      list = await this.getComissaoListaTotal(cnpj, sizePage, retorno.getNextPage().number, vendaItem, retorno);
     } else {
-      await this.getComissaoListaCancelada(cnpj, sizePage, numberPage, vendaItem).then((lista) => {
-//        console.log("===========================contador(getComissaoListaCancelada)-TERMINOU: ", this.meuContador);
-        retorno.content = retorno.content.concat(lista.content);
-        retorno.length += lista.length;
-      });
-
-      await this.getComissaoListaDevolvido(cnpj, sizePage, numberPage, vendaItem).then((lista) => {
-        retorno.content = retorno.content.concat(lista.content);
-        retorno.length += lista.length;
-      });
+      list = await this.concatCanceladasAndDevolvidas(cnpj, sizePage, numberPage, vendaItem, retorno);
     }
 //    console.log("===========================contador(getComissaoListaTotal)-TERMINOU: ", this.meuContador);
-    return retorno;
+    return list;
   }
 
   private async getComissaoListaNormal(cnpj: string, sizePage: number, numberPage: number, vendaItem: VendaItem): Promise<Page<VendaItemComissao>> {
@@ -114,6 +135,7 @@ export class ComissaoWorker {
       .limit(pageNormais.size);
 
 //    // if (pageNormais.size === 50) console.log("<><><><><><><>", sqlVendaNormal.getQueryAndParameters());
+    console.log(sqlVendaNormal.getQueryAndParameters());
 
     return await sqlVendaNormal.getManyAndCount().then((value) => {
 //      // if (value[0].length === 50 ) console.log(value[0][0]);
@@ -126,13 +148,14 @@ export class ComissaoWorker {
 
         comissaoHandler.calcularComissao(ComissaoAdapterProvider(item, VendaStatus.NORMAL), comissao);
         
-        
         comissao.cliente = {
           id: item?.id_venda?.id_cliente?.id,
           nome: item?.id_venda?.id_cliente.nome
         };
         itensNormal.content.push(comissao);
       });
+
+      // console.log(itensNormal.content);
 
       itensNormal.length = pageNormais.length;
       itensNormal.number = pageNormais.number;
@@ -246,6 +269,21 @@ export class ComissaoWorker {
 
   async getComissaoNormalTotalizadores(cnpj: string, vendaItem: VendaItem) {
 
+  }
+
+  async concatCanceladasAndDevolvidas(cnpj, sizePage, numberPage, vendaItem, list): Promise<Page<VendaItemComissao>> {
+    await this.getComissaoListaCancelada(cnpj, sizePage, numberPage, vendaItem).then((lista) => {
+    //        console.log("===========================contador(getComissaoListaCancelada)-TERMINOU: ", this.meuContador);
+      list.content = list.content.concat(lista.content);
+      list.length += lista.length;
+    });
+
+    await this.getComissaoListaDevolvido(cnpj, sizePage, numberPage, vendaItem).then((lista) => {
+      list.content = list.content.concat(lista.content);
+      list.length += lista.length;
+    });
+
+    return list;
   }
 }
 

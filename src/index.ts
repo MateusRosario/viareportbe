@@ -1,71 +1,82 @@
 import express, { Request, Response } from "express";
 import routes from "./routes";
 import { dbConnectionService } from "./services/data-config-services/db-connection.service";
-import { encontrarDiretorioViaERP } from "./global";
 import envConfigsService from "./services/data-config-services/env-configs.service";
 import ejs = require('ejs');
+import logService from "./services/log-services/logger.service";
 
-const app = express();
-const morgan = require("morgan");
-const winston = require("./config/log");
 const cors = require("cors");
+const app = express();
+const path = require('path');
 
+const Log = logService();
 
 class ViaReportApp {
 
   async start() {
-    this.enviromentLog();
 
-    await this.initializeDataBaseConnections();
+    Log.file('Aplication Start-up', Date.now().toLocaleString());
 
-    this.setAppConfigs();
+    try {
 
-    this.setViews();
+      this.enviromentLog();
 
-    this.setRoutes();
+      await this.initializeDataBaseConnections();
 
-    //Aplicação Iniciada
-    console.log("--- [[ViaReport Iniciado]] ---\n\n");
+      this.setAppConfigs();
+  
+      this.setViews();
+  
+      this.setRoutes();
+  
+      //Aplicação Iniciada
+      logService().log("--- [[ViaReport Iniciado]] ---\n\n");
+  
+      app.listen(process.env.PORT || 9005);
 
-    app.listen(process.env.PORT);
+    } catch(Exeption) {
+      console.error(Exeption);
+      Log.file(Exeption);
+      while (true) {}
+    }
   }
 
   enviromentLog() {
     if(process.env.PRODUCTION == 'TRUE') {
-      console.log("--- [[Iniciando em Ambiente de Produção]] ---\n\n");
+      Log.log("--- [[Iniciando em Ambiente de Produção]] ---\n\n");
     } else {
-      console.log("--- [[Iniciando em Ambiente de Desenvolvimento]] ---\n\n");
+      Log.log("--- [[Iniciando em Ambiente de Desenvolvimento]] ---\n\n");
     }
   }
 
   async initializeDataBaseConnections(): Promise<void> {
     return dbConnectionService().initializeConnections().then(() => {
       //BDs Conectados
-      console.log("Bancos de Dados Conectados\n\n");
+      Log.log("Bancos de Dados Conectados\n\n");
     }).catch(() => {
       //Nenhum Banco Conectado
-      console.error('Nenhuma conexão com banco foi estabelecida!\n\n');
+      Log.log('Nenhuma conexão com banco foi estabelecida!\n\n');
     });
   }
 
   setAppConfigs() {
     app.use(express.json());
     app.use(cors());
-    app.use(morgan("combined", { stream: winston.stream }));
+    app.use(Log.httpLogger());
   }
 
   setViews() {
-    const path = require('path');
-    
     app.set('view engine', 'ejs');
-    app.engine('ejs', ejs.__express)
+    app.engine('ejs', ejs.__express);
     app.set('views', path.join(__dirname, "views"));
+    app.use(express.static(path.join(__dirname, 'views')));
+    app.use('/public', express.static(path.join(__dirname, 'assets')));
   }
 
   setRoutes() {
     app.get("/close", (req, res) => {
       process.exit(0);
-    })
+    });
   
     app.get("/ping", (req: Request, res: Response) => {
       res.status(200).send("OK");
@@ -87,6 +98,7 @@ class ViaReportApp {
     })
 
     app.use("/v1", (req, res, next) => {
+
       if (req.headers["cnpj"]) {
         //console.log("cnpj: ", req.headers["cnpj"]);
         return next();

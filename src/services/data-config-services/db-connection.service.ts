@@ -17,8 +17,9 @@ import { DevolucaoItemView } from '../../model/apoio/devolucao-item-view';
 import { VendaCanceladaViewm } from '../../model/entity/venda-cancelada-viewm';
 import { VendaDuplicata } from '../../model/entity/venda-duplicata';
 import envConfigsService from './env-configs.service';
+import { EmpresasConfiguracoes } from '../../model/entity/empresas-configuracoes';
 
-const ENTITIES = [Empresas, Usuarios, Vendedor, Empresas, Venda, VendaItem, Devolucao, DevolucaoItem, FormaPagamento, GrupoProduto, Produto, Cliente, DevolucaoVendaViewm, DevolucaoItemView, VendaCanceladaViewm, VendaDuplicata]
+const ENTITIES = [Empresas, EmpresasConfiguracoes, Usuarios, Vendedor, Empresas, Venda, VendaItem, Devolucao, DevolucaoItem, FormaPagamento, GrupoProduto, Produto, Cliente, DevolucaoVendaViewm, DevolucaoItemView, VendaCanceladaViewm, VendaDuplicata]
 
 /**
  * @description Classe responsável por genreciar as conexões ao banco de dados. 

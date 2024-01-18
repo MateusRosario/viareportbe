@@ -1,4 +1,5 @@
 import { readdirSync } from "fs";
+import logService from "../log-services/logger.service";
 
 const nodeDiskInfo = require("node-disk-info");
 const path = require("path");
@@ -12,16 +13,13 @@ class ViaERPService {
 
     private loadsDiretorioViaERP() {
         try {
-            if (process.env.PRODUCTION == 'TRUE') {
-                const disks = nodeDiskInfo.getDiskInfoSync();
-
-                for (let i = 0; i < disks.length; i++) {
-                    if (ViaERPService.hasViaERPDirectory(disks[i].mounted + path.sep)) {
-                        this._diretorio = disks[i].mounted + path.sep + "ViaERP" + path.sep + "Modulos" + path.sep + "ViaReport";
-                        console.log('root dir:', this._diretorio);
-                        console.log("ACHOU O DIRETÓRIO DO VIAERP: ",this._diretorio);
-                        break;
-                    }
+            if (process.env.PRODUCTION == 'TRUE' || process.env.PRODUCTION == undefined) {
+                const dir = this.searchViaERPRepository();
+                if(dir != undefined) {
+                    this._diretorio = dir;
+                } else {
+                    logService().file('Diretório do ViaERP não identificado');
+                    return;
                 }
             } else {
                 const args = process.argv;
@@ -41,6 +39,39 @@ class ViaERPService {
             console.log(`Algo Falhou`);
             console.error(e);
         }
+    }
+
+    searchViaERPRepository(): string | undefined {
+        const viaERP_home = process.env.ViaERP_home;
+        if(viaERP_home == undefined) {
+            const disks = nodeDiskInfo.getDiskInfoSync();
+
+            const dirs = [];
+            for (let i = 0; i < disks.length; i++) {
+                if (ViaERPService.hasViaERPDirectory(disks[i].mounted + path.sep)) {
+                    dirs.push(disks[i].mounted + path.sep + "ViaERP");
+                    console.log('root dir:', this._diretorio);
+                    console.log("ACHOU O DIRETÓRIO DO VIAERP: ",this._diretorio);
+                }
+            }
+
+            if(dirs.length == 0) {
+                return undefined;
+            } else if(dirs.length == 1) {
+                console.log('Diretório o ViaERP: ', this._diretorio);
+                return dirs[0];
+            } else if(dirs.length > 1) {
+                this._diretorio = dirs.pop();
+                console.log('Multiplos diretórios do ViaERP encontrados!\n'
+                    + 'Não há configuração da variável de ambiente "ViaERP_home"!\n'
+                    + 'Ultimo diretório será selecionado: ', this._diretorio);
+                return dirs.pop();
+            }
+        } else {
+            return viaERP_home;
+        }
+
+        return undefined;
     }
 
     readConfigs(): any {

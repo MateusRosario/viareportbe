@@ -83,9 +83,7 @@
             /* Don't forget this, required for the stickiness */
         }
     </style>
-    <div>
-        <%- include('./components/nav'); %>
-    </div>
+
     <script>
         const cnpj = `<%=cnpj %>`;
         var values = undefined;
@@ -149,6 +147,10 @@
         }
         const isValid = (value) => value && value != null && value !== undefined;
     </script>
+
+    <div>
+        <%- include('./components/nav'); %>
+    </div>
 </head>
 
 <body style="width: 100% !important;">
@@ -158,10 +160,10 @@
                 <button class="nav-link active" id="home-tab" data-bs-toggle="tab" data-bs-target="#home" type="button"
                     role="tab" aria-controls="home" aria-selected="true">Visão geral</button>
             </li>
-            <!-- <li class="nav-item" role="presentation">
+            <li class="nav-item" role="presentation">
                 <button class="nav-link" id="comicao-tab" data-bs-toggle="tab" data-bs-target="#comicao" type="button"
                     role="tab" aria-controls="comicao" aria-selected="false">Comições</button>
-            </li> -->
+            </li>
         </ul>
         <div class="tab-content" id="myTabContent">
             <div class="tab-pane fade show active" id="home" role="tabpanel" aria-labelledby="home-tab">
@@ -184,9 +186,9 @@
                 </form>
                 <%- include('./VendedorDashBoard'); %>
             </div>
-            <!-- <div class="tab-pane fade" id="comicao" role="tabpanel" aria-labelledby="comicao-tab">
-                 < include('./Comissao'); >
-            </div> -->
+            <div class="tab-pane fade" id="comicao" role="tabpanel" aria-labelledby="comicao-tab">
+                <%- include('./Comissao'); %>
+            </div>
         </div>
     </div>
 </body>

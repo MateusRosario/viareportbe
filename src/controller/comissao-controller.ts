@@ -28,13 +28,12 @@ export class ComissaoController {
   }
 
   getComissaoPorItem(req: TypedRequestBody<VendaItem>, res: Response<any, Record<string, any>>, next: any): void {
-    let p = ComissaoController.assembleModelAndPage(req.query, getDBConnection(req.headers['cnpj'] as string));
+    let paginacao = ComissaoController.assembleModelAndPage(req.query, getDBConnection(req.headers['cnpj'] as string));
 
     let work = new ComissaoWorker();
 
-    if (p.todasAsPaginas) {
-      let retorno: Page<VendaItemComissao>;
-      work.getComissaoListaTotal(req.headers["cnpj"].toString(), p.page.size, p.page.number, p.vendaItem, retorno).then(
+    if (paginacao.todasAsPaginas) {
+      work.getComissaoPorItem(req.headers["cnpj"].toString(), paginacao.vendaItem, paginacao.page.number, paginacao.page.size, true).then(
         (result) => {
           res.status(200).send(result);
         },
@@ -43,7 +42,7 @@ export class ComissaoController {
         }
       );
     } else {
-      work.getComissaoPorItem(req.headers["cnpj"].toString(), p.vendaItem, p.page.number, p.page.size).then(
+      work.getComissaoPorItem(req.headers["cnpj"].toString(), paginacao.vendaItem, paginacao.page.number, paginacao.page.size, false).then(
         (result) => {
           res.status(200).send(result);
         },
@@ -166,6 +165,7 @@ const controller = new ComissaoController();
 
 //** data requests */
 ComissaoRoute.get("/get_comissao_por_item", controller.getComissaoPorItem);
+
 ComissaoRoute.get("/get_comissao_group_by_indice", controller.getComissaoGroupByIndice);
 ComissaoRoute.get('/get_comissao_decrescente', controller.getComissaoDecrescente);
 

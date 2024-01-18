@@ -1,5 +1,4 @@
 import { assert } from "console";
-import { root_directory } from "../../global";
 import viaERPService from "./viaerp.service";
 
 /**

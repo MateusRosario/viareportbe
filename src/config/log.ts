@@ -20,7 +20,7 @@ var options = {
     }
 }
 
-const logger = winston.createLogger({
+const Logger = winston.createLogger({
     transports:[
         new winston.transports.File(options.file),
         new winston.transports.Console(options.console)
@@ -28,26 +28,11 @@ const logger = winston.createLogger({
     exitOnError: false,
 })
 
-logger.stream = {
+Logger.stream = {
     write: function(message: string, encoding: any){
-        logger.error(message)
+        Logger.log({level: 'info', message: message})
     }
 }
 
-module.exports = logger;
-
-/**
- * @param err httpException(status: number, message)
- * @param req Request
- * @param res Response
- * 
- * @description usar o metodo next(Função void que acompanha as requisições) em todas as classes controllers para efetuar o método do handler!
- */
-export function ErroHandle(err: httpException, req: Request, res: Response, next) {
-    res.locals.message = err.message;
-    res.locals.error = req.app.get('env') === 'development' ? err : {};
-
-    logger.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
-    res.status(err.status || 500);
-    res.render('error');
-}
+/** Exporting Logger criado */
+export default Logger;

@@ -1,4 +1,5 @@
-import { BaseEntity, Column, Entity, PrimaryGeneratedColumn } from "typeorm"
+import { BaseEntity, Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "typeorm"
+import { EmpresasConfiguracoes } from "./empresas-configuracoes";
 
 @Entity({name: "empresas"})
 export class Empresas extends BaseEntity {
@@ -7,6 +8,8 @@ export class Empresas extends BaseEntity {
     id: number;
     @Column()
     cnpj: string;
+    @Column()
+    inscricao_estadual: string;
     @Column()
     nome: string;
     @Column()
@@ -22,5 +25,7 @@ export class Empresas extends BaseEntity {
     @Column()
     uf: string;
     @Column({name: 'fone1'})
-    fone: string
+    fone: string;
+    @OneToOne(() => EmpresasConfiguracoes, (EmpresasConfiguracoes) => EmpresasConfiguracoes.empresa)
+    empresaConfiguracoes: EmpresasConfiguracoes;
 }

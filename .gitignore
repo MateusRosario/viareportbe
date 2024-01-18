@@ -89,5 +89,6 @@ Thumbs.db
 /nbproject/private/
 
 /build/
+log/
 *.exe
 *.log

@@ -1,0 +1,98 @@
+<%# Componente Cabeçalho para relatórios
+
+    Componente padrão que pode ser incluido junto as páginas no momento da renderizaçãom
+    ou renderizado atrávez de um controller e carregado posteriormente 
+    (permitindo atualizar dados)
+
+    parâmetros recebidos:
+
+    {
+        imgLogo: logo do cliente,
+        empresa: empresa,
+        titulo: titulo,
+        filtros: {
+            label: valor
+            label: valor
+        } -- descreve quais filtros foram usados/selecionados para gerar relatório,
+
+    }
+
+    id para queries: '#default-header'
+%>
+
+<style>
+    .header-container {
+        border: 0.05mm solid black;
+        line-height: 15px !important;
+    }
+
+    .header-top {
+        border-bottom: 0.05mm solid black;
+        display: grid;
+        grid-template-columns: 20fr 80fr;
+    }
+
+    .header-infos {
+        display: grid;
+        grid-template-columns: 10fr 10fr 15fr;
+        gap: 5px;
+    }
+
+    .header-bottom {
+        display: grid;
+        grid-template-columns: 22fr 56fr 22fr;
+        overflow: visible;
+        text-wrap: nowrap;
+    }
+
+    .img-logo-header-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .img-logo-header {
+        width: 90%;
+        max-height: 70px;
+        object-fit: contain;
+    }
+</style>
+
+<div class="header-container mb-2" id="default-header">
+    <div class="row header-top p-2 m-0">
+        <div class="img-logo-header-container">
+           <img class="img-logo-header" alt="logo" src="<%= imgLogo %>">
+        </div>
+
+        <div class="p-0">
+            <h5 class="m-0 text-start mb-1"><%= empresa.nome %></h5>
+            <div class="header-infos">
+                <div>
+                    <div class="text-start">CNPJ: <%= empresa.cnpj %></div>
+                    <div class="text-start">Endereço: <%= empresa.endereco %></div>
+                </div>
+
+                <div>
+                    <div class="text-start">IE: <%= empresa.inscricao_estadual %></div>
+                    <div class="text-start">Telefone: <%= empresa.fone %></div>
+                </div>
+    
+                <div class="p-0 justify-content-end">
+                    <% for(filtro in filtros) { %>
+                        <div class="text-end mt-1 mb-1">
+                            <span style="font-weight: bold;"><%=filtro %>:</span>
+                            <span style="text-wrap: nowrap;"><%=filtros[filtro] %></span>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="header-bottom p-1 m-0">
+        <div class="text-start vertical"></div>
+        <div class="text-center" style="text-wrap: wrap;"><h5 class="m-0"><%= titulo %></h5></div>
+        <div class="text-end">Impresso em: <%= new Date().toLocaleString() %></div>
+    </div>
+</div>
