@@ -7,7 +7,10 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node -r ts-node/register --env-file=.env ./src/index.ts",
     "start-dev": "nodemon --exec node -r ts-node/register --env-file=dev.env ./src/index.ts",
-    "compile": "xcopy /S /E /Y .\\src\\views\\* .\\dist\\views\\ & xcopy /Y .\\.env .\\dist\\.env & tsc -build",
+    "compile-views": "xcopy /S /E /Y .\\src\\views\\* .\\dist\\views\\",
+    "compile-envs": "xcopy /Y .\\.env .\\dist\\.env",
+    "compile-assets": "xcopy /S /E /Y .\\src\\assets\\* .\\dist\\assets\\",
+    "compile": "npm run compile-views & npm run compile-envs & npm run compile-assets & tsc -build",
     "build": "npm run compile & pkg ./package.json"
   },
   "author": "Manoel B. R. Filho",
