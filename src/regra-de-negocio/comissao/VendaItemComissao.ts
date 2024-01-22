@@ -1,20 +1,24 @@
 import { RepositoryNotTreeError } from "typeorm";
 
 export enum ComissaoTipo {
-    PRODUTO_SEM_COMISSAO = "PRODUTO SEM COMISSÃO",
-    PRODUTO_COM_RESTRICAO = "PRODUTO COM RESTRIÇÃO",
-    GRUPO_SEM_COMISSAO = "GRUPO SEM COMISSÃO",
-    GRUPO_COM_RESTRICAO = "GRUPO COM RESTRIÇÃO",
+    PRODUTO_SEM_COMISSAO = "PROD. S/ COMISSÃO",
+    PRODUTO_COM_RESTRICAO = "PROD. C/ RESTRIÇÃO",
+    GRUPO_SEM_COMISSAO = "GRUPO S/ COMISSÃO",
+    GRUPO_COM_RESTRICAO = "GRUP. C/ RESTRIÇÃO",
     VENDEDOR_COMISSAO_APRAZO = "COMISSÃO A PRAZO",
     VENDEDOR_COMISSAO_AVISTA = "COMISSÃO A VISTA",
-    SEM_COMISSAO = "NÃO TEM COMISSÃO",
+    SEM_COMISSAO = "SEM COMISSÃO",
     COMISSAO_DESCRESCENTE= "RESTRITO POR COMISSÃO DECRESCENTE"
 }
 
 export enum VendaStatus {
-        NORMAL = "NORMAL",
-        CANCELADA = "CANCELADA",
-        DEVOLVIDA = "DEVOLVIDA",
+    NORMAL = "NORMAL",
+    CANCELADA = "CANCELADA",
+    DEVOLVIDA = "DEVOLVIDA",
+    /** Venda Cancelada, que foi geranda antes do período consultado */
+    CANCELADA_FP = "CANCELADA (F.P.)",
+    /** Venda Devolvida, que foi geranda antes do período consultado */
+    DEVOLVIDA_FP = "DEVOLVIDA (F.P.)"
 }
 
 

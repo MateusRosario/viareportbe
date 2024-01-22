@@ -7,8 +7,6 @@
     const cnpjEmpresa = "<%=cnpj %>";
     const baseURL = "http://localhost:9005";
 
-    let headerRef;
-
     let datainicio;
     let datafim;
     let selectvendedor;
@@ -41,6 +39,7 @@
     let maximoAtingido = false;
 
     let comissaoSoma = 0;
+    let vendasSoma = 0;
 
     async function loadHeader(vendedor) {
         $("#header-placeholder").empty();
@@ -49,7 +48,7 @@
             vendedor = " --- ";
         }
 
-        await insertHeader(
+        await insertHeader_Global(
             "RELATÓRIO DE COMISSÕES",
             {
                 Período: `${datainicio.val()} - ${datafim.val()}`,
@@ -57,64 +56,83 @@
             },
             "#header-placeholder",
             false
-        ).then((ref) => {
-            headerRef = ref;
-        });
-    }
-
-    function insertHeader(titulo, filtros, appendTo, hide = false) {
-        return fetch(`${baseURL}/v1/commonComponent/header`, {
-            method: "POST",
-            headers: myheaders,
-            body: JSON.stringify({
-                titulo: titulo,
-                filtros: filtros,
-            }),
-        })
-            .then((result) => {
-                return result.text();
-            })
-            .then((text) => {
-                $(appendTo).prepend(text);
-
-                const ref = $("#default-header");
-
-                if (hide) {
-                    ref.attr("hidden", "true");
-                }
-
-                return ref;
-            });
+        )
     }
 
     async function loadFooter() {
         $("#footer-placeholder").empty();
 
-        await insertFooter(
+        await insertFooter_Global(
             "#footer-placeholder",
             false
-        ).then((ref) => { });
+        )
     }
 
-    function insertFooter(appendTo, hide = false) {
-        return fetch(`${baseURL}/v1/commonComponent/footer`, {
-            method: "GET",
-            headers: myheaders,
-        })
-            .then((result) => {
-                return result.text();
-            })
-            .then((text) => {
-                $(appendTo).prepend(text);
+    async function filtrarResumo() {
+        await fetch(
+            `/v1/comissao/get_comissao_group_by_indice?dataInicio=${formatDateToAPI(
+                datainicio.val(),
+                5,
+                1
+            )}&dataFim=${formatDateToAPI(
+                datafim.val(),
+                19,
+                59
+            )}&idVendedor=${parseInt(selectvendedor.val())}`,
+            {
+                method: "GET",
+                headers: myheaders,
+            }
+        ).then(async (response) => {
+            await response.json().then(
+                (data) => {
+                    console.log('Resumo:', data);
 
-                const ref = $("#default-footer");
+                    let tableBody = $("#table-dados-resumo");
 
-                if (hide) {
-                    ref.attr("hidden", "true");
+                    if (page === 0) tableBody.empty();
+
+                    let totalVendas = 0.0;
+                    let totalComissao = 0.0;
+
+                    if (data instanceof Array) {
+                        for (let index = 0; index < data.length; index++) {
+                            const valor = data[index];
+                            tableBody.append(
+                                $(`<tr class="table-row">`)
+                                    .append(`<td style="width: 40px">${valor.descricaoDoIndice}</td>`)
+                                    .append(`<td style="text-align: right; padding-right: 5px; width: 25px;">${formatterCom.format(valor.total)}</td>`)
+                                    .append(`<td style="text-align: right; padding-right: 5px; width: 25px;">${parseFloat(valor.percentual).toFixed(2)}</td>`)
+                                    .append(`<td style="text-align: right; padding-right: 5px; width: 25px;">${formatterCom.format(valor.comissao)}</td>`)
+                            );
+
+                            totalVendas += valor.total;
+                            totalComissao += valor.comissao;
+                        }
+                    }
+
+                    //$("tfoot").remove();
+
+                    let tableFoot = $("#totais-resumo");
+                    tableFoot.empty();
+
+                    tableBody.append(
+                        $(
+                            `<th scope="row" class="ps-2"></th><td class="text-end" style="padding-right: 5px">${formatterCom.format(
+                                totalVendas
+                            )}</td><td></td><td class="text-end pe-2">${formatterCom.format(
+                                totalComissao
+                            )}</td>`
+                        )
+                    );
+                },
+                (erro) => {
+                    let tableBody = $("#table-dados-resumo");
+
+                    tableBody.empty();
                 }
-
-                return ref;
-            });
+            );
+        });
     }
 
     async function filtrarItens(todasAsPaginas = false, append = true) {
@@ -153,13 +171,14 @@
             await response.json().then((data) => {
                 maxLenght = data.length;
 
-                console.log(data);
+                console.log('Itens', data);
 
                 let tableBody = $("#table-dados");
 
                 if (!append || page === 0) {
                     tableBody.empty();
                     comissaoSoma = 0;
+                    vendasSoma = 0;
 
                     if (todasAsPaginas) {
                         page = data.number;
@@ -182,6 +201,7 @@
                             .append(`<td>${valor.id_venda}</td>`)
                             .append(`<td class="text-center">${formatarDate(valor.data_saida)}</td>`)
                             .append(`<td>( ${valor.id_produto} ) ${valor.nome_produto}</td>`)
+                            .append(`<td> ${valor.status}</td>`)
                             .append(`<td class="text-end pe-5">${formatterCom.format(valor.vl_total)}</td>`)
                             .append(`<td>${valor.comissao_indice}</td>`)
                             .append(`<td>${parseFloat(valor.comissao_percentual).toFixed(2)}</td>`)
@@ -190,6 +210,7 @@
                     );
 
                     comissaoSoma += valor.comissao_valor;
+                    vendasSoma += valor.vl_total;
                 }
 
                 maximoAtingido = (page + 1) * 50 >= maxLenght;
@@ -198,12 +219,13 @@
                 tableTotal.empty();
                 if (todasAsPaginas || maximoAtingido) {
                     tableTotal
-                        .append(`<td></td>`)
-                        .append(`<td></td>`)
-                        .append(`<td></td>`)
-                        .append(`<td></td>`)
-                        .append(`<td></td>`)
                         .append(`<td>TOTAL:</td>`)
+                        .append(`<td></td>`)
+                        .append(`<td></td>`)
+                        .append(`<td></td>`)
+                        .append(`<td class="pe-5" style="text-align: right; padding-right: 5px;">${formatterCom.format(vendasSoma)}</td>`)
+                        .append(`<td></td>`)
+                        .append(`<td></td>`)
                         .append(`<td style="text-align: right; padding-right: 5px;">${formatterCom.format(comissaoSoma)}</td>`
                         );
 
@@ -215,7 +237,6 @@
         });
     }
 
-    /** depreciado **/
     async function filtrarResumo() {
         await fetch(
             `/v1/comissao/get_comissao_group_by_indice?dataInicio=${formatDateToAPI(
@@ -234,6 +255,8 @@
         ).then(async (response) => {
             await response.json().then(
                 (data) => {
+                    console.log('Resumo:', data);
+
                     let tableBody = $("#table-dados-resumo");
 
                     if (page === 0) tableBody.empty();
@@ -244,17 +267,21 @@
                     if (data instanceof Array) {
                         for (let index = 0; index < data.length; index++) {
                             const valor = data[index];
-                            // tableBody.append(
-                            //     $(`<tr class="table-row">`)
-                            //         .append(`<td style="width: 40px">${valor.descricaoDoIndice}</td>`)
-                            //         .append(`<td style="text-align: right; padding-right: 5px; width: 25px;">${formatterCom.format(valor.total)}</td>`)
-                            //         .append(`<td style="text-align: right; padding-right: 5px; width: 25px;">${parseFloat(valor.percentual).toFixed(2)}</td>`)
-                            //         .append(`<td style="text-align: right; padding-right: 5px; width: 25px;">${formatterCom.format(valor.comissao)}</td>`)
-                            // );
+                            tableBody.append(
+                                $(`<tr class="table-row">`)
+                                    .append(`<td style="width: 40px">${valor.descricaoDoIndice}</td>`)
+                                    .append(`<td style="text-align: right; padding-right: 5px; width: 25px;">${formatterCom.format(valor.total)}</td>`)
+                                    .append(`<td style="text-align: right; padding-right: 5px; width: 25px;">${parseFloat(valor.percentual).toFixed(2)}</td>`)
+                                    .append(`<td style="text-align: right; padding-right: 5px; width: 25px;">${formatterCom.format(valor.comissao)}</td>`)
+                            );
 
                             totalVendas += valor.total;
                             totalComissao += valor.comissao;
                         }
+
+                        $("#total-confere-indice").append(
+                            `Total: ${formatterCom.format(totalComissao)}`
+                        );
                     }
 
                     //$("tfoot").remove();
@@ -264,7 +291,9 @@
 
                     tableBody.append(
                         $(
-                            `<th scope="row" class="ps-2"></th><td class="text-end pe-3"></td><td></td><td class="text-end pe-2">${formatterCom.format(
+                            `<th scope="row" class="ps-2"></th><td class="text-end" style="padding-right: 5px">${formatterCom.format(
+                                totalVendas
+                            )}</td><td></td><td class="text-end pe-2">${formatterCom.format(
                                 totalComissao
                             )}</td>`
                         )
@@ -272,44 +301,8 @@
                 },
                 (erro) => {
                     let tableBody = $("#table-dados-resumo");
-
                     tableBody.empty();
-                }
-            );
-        });
-    }
-
-    async function totalConfereIndice() {
-        $("#total-confere-indice").empty();
-
-        await fetch(
-            `/v1/comissao/get_comissao_group_by_indice?dataInicio=${formatDateToAPI(
-                datainicio.val(),
-                5,
-                1
-            )}&dataFim=${formatDateToAPI(
-                datafim.val(),
-                19,
-                59
-            )}&idVendedor=${parseInt(selectvendedor.val())}`,
-            {
-                method: "GET",
-                headers: myheaders,
-            }
-        ).then(async (response) => {
-            await response.json().then(
-                (data) => {
-                    if (data instanceof Array) {
-                        const totalIndice = data.reduce((acc, valor) => {
-                            return acc + valor.comissao;
-                        }, 0);
-
-                        $("#total-confere-indice").append(
-                            `Total: ${formatterCom.format(totalIndice)}`
-                        );
-                    }
-                },
-                (erro) => {
+                    
                     $("#total-confere-indice").append("----");
                 }
             );
@@ -326,11 +319,11 @@
 
             pesquisando = true;
 
+            $("#total-confere-indice").empty();
             let itens = filtrarItens(todasAsPaginas, false);
-            let confere = totalConfereIndice();
-            // let resumo = filtrarResumo();
+            let resumo = filtrarResumo();
 
-            await Promise.all([itens, confere]).then((v) => {
+            await Promise.all([itens, resumo]).then((v) => {
                 console.log("RESOLVEU filtrarItens, filtrarResumo");
                 pesquisando = false;
 
@@ -429,6 +422,8 @@
                 new Date(datafim.val()).toLocaleDateString()
             );
 
+            $("#table-dados-resumo").empty();
+
             filtrar();
         });
 
@@ -472,7 +467,7 @@
         );
 
         $(document).ready(function () {
-            loadFooter();
+            // loadFooter();
 
             $("#container-table-body").on("scroll", (event) => {
                 const jaCarregado = (page + 1) * size;
@@ -575,7 +570,7 @@
     }
 
     .report-header {
-        display: block;
+        display: none;
     }
 
     .titulo-sessao {
@@ -654,7 +649,7 @@
 
     .myTable tbody tr td {
         font-size: 7pt !important;
-        line-height: 2pt !important;
+        line-height: 8pt !important;
     }
 
     .myTable tfoot tr td {
@@ -715,12 +710,11 @@
 
     @page {
         size: portrait;
-        margin: 0;
-        /* margin-top: 0mm;
-		margin-bottom: 0mm; */
-        /* margin-right: 10mm;
-        margin-left: 10mm; */
-
+        size: A4;
+        margin-top: 3mm;
+        margin-left: 4mm;
+        margin-bottom: 2mm;
+        margin-right: 1mm;
     }
 </style>
 
@@ -779,15 +773,15 @@
         </div>
     </section> -->
 
-    <!-- <div class="row">
+    <div class="row">
         <div id="container-table-body-resumo" class="table-responsive">
-            <div class="titulo-sessao">COMISSÃO TOTAL</div>
+            <div class="titulo-sessao">COMISSÃO POR ÍNDICE</div>
             <table id="table-resumo" class="table table-striped  table-hover myTable">
                 <thead>
                     <tr>
-                        <th scope="col"></th>
-                        <th scope="col" class="text-end"></th>
-                        <th scope="col" class="text-end"></th>
+                        <th scope="col">Descrição</th>
+                        <th scope="col" class="text-end">Vendas Totais</th>
+                        <th scope="col" class="text-end">Percentual Final Total</th>
                         <th scope="col" class="text-end pe-2">Comissão</th>
                     </tr>
                 </thead>
@@ -799,7 +793,7 @@
                 </tfoot>
             </table>
         </div>
-    </div> -->
+    </div>
 
     <table class="w-100">
         <tbody style="margin-bottom: 20px;">
@@ -816,6 +810,7 @@
                                     <th scope="col">Cód</th>
                                     <th scope="col" class="text-center">Data</th>
                                     <th scope="col">Produto</th>
+                                    <th scope="col">Tipo</th>
                                     <th scope="col" class="text-end pe-5">Venda</th>
                                     <th scope="col">Condição</th>
                                     <th scope="col">%</th>
@@ -829,7 +824,8 @@
                             <tfoot>
                                 <tr id="rowBtnFinal">
                                     <th scope="col"></th>
-                                    <th scope="col" class="text-center"></th>
+                                    <th scope="col"></th>
+                                    <th scope="col"></th>
                                     <th scope="col"></th>
                                     <th scope="col"></th>
                                     <th scope="col"></th>
@@ -846,12 +842,12 @@
                 </td>
             </tr>
         </tbody>
-        <tfoot>
+        <!-- <tfoot>
             <tr>
                 <td class="p-2">
                     <div id="footer-placeholder"></div>
                 </td>
             </tr>
-        </tfoot>
+        </tfoot> -->
     </table>
 </div>

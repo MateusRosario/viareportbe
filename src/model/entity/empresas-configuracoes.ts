@@ -12,4 +12,13 @@ export class EmpresasConfiguracoes extends BaseEntity {
     @OneToOne(() => Empresas)
     @JoinColumn({ name: 'id_empresa' })
     empresa: Empresas;
+
+    /**
+     * @returns imagem da empresa para relatórios 
+     * no formato base64
+     */
+    getImgRelatorioAsBase64(): string {
+        const img = Buffer.from(this.img_relatorio, 'binary').toString('base64');
+        return 'data:image/jpg;base64,' + img;
+    }
 }

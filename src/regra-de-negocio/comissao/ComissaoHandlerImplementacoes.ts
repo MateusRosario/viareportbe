@@ -25,8 +25,8 @@ export class ComissaoProdutoHandler extends ComissaoHandlerBase {
       valorComissao.comissao_valor = 0.0;
     } else if (item.getProduto().comissao > 0.0) {
       valorComissao.comissao_indice = ComissaoTipo.PRODUTO_COM_RESTRICAO;
-      valorComissao.comissao_valor = multiplicarVT([Decimal.div(item.getProduto().comissao, 100).toNumber(), item.getValorLiquido()]);
-      valorComissao.comissao_valor = new Decimal(valorComissao.comissao_valor).toDecimalPlaces(2).toNumber();
+      valorComissao.comissao_valor = multiplicarVT([Decimal.div(item.getProduto().comissao, 100).toNumber(), item.getValorLiquido()], 4);
+      // valorComissao.comissao_valor = new Decimal(valorComissao.comissao_valor).toDecimalPlaces(2).toNumber();
       valorComissao.comissao_percentual = item.getProduto().comissao;
     } else processou = false;
 
@@ -148,8 +148,8 @@ export class ComissaoGrupoHandler extends ComissaoHandlerBase {
         valorComissao.comissao_valor = 0.0;
       } else if (grupo.comissao_vendedor > 0.0) {
         valorComissao.comissao_indice = ComissaoTipo.GRUPO_COM_RESTRICAO;
-        valorComissao.comissao_valor = multiplicarVT([Decimal.div(grupo.comissao_vendedor, 100).toNumber(), item.getValorLiquido()]);
-        valorComissao.comissao_valor = new Decimal(valorComissao.comissao_valor).toDecimalPlaces(2).toNumber();
+        valorComissao.comissao_valor = multiplicarVT([Decimal.div(grupo.comissao_vendedor, 100).toNumber(), item.getValorLiquido()], 4);
+        // valorComissao.comissao_valor = new Decimal(valorComissao.comissao_valor).toDecimalPlaces(2).toNumber();
         valorComissao.comissao_percentual = grupo.comissao_vendedor;
       } else processou = false;
     } else processou = false;
@@ -167,13 +167,13 @@ export class ComissaoVendedorHandler extends ComissaoHandlerBase {
 
       if (forma.condicao.trim() === "APRAZO" && vendedor.comissao_aprazo > 0.0) {
         valorComissao.comissao_indice = ComissaoTipo.VENDEDOR_COMISSAO_APRAZO;
-        valorComissao.comissao_valor = multiplicarVT([Decimal.div(vendedor.comissao_aprazo, 100).toNumber(), item.getValorLiquido()]);
-        valorComissao.comissao_valor = new Decimal(valorComissao.comissao_valor).toDecimalPlaces(2).toNumber();
+        valorComissao.comissao_valor = multiplicarVT([Decimal.div(vendedor.comissao_aprazo, 100).toNumber(), item.getValorLiquido()], 4);
+        // valorComissao.comissao_valor = new Decimal(valorComissao.comissao_valor).toDecimalPlaces(2).toNumber();
         valorComissao.comissao_percentual = vendedor.comissao_aprazo;
       } else if (forma.condicao.trim() === "AVISTA" && vendedor.comissao_avista > 0.0) {
         valorComissao.comissao_indice = ComissaoTipo.VENDEDOR_COMISSAO_AVISTA;
-        valorComissao.comissao_valor = multiplicarVT([Decimal.div(vendedor.comissao_avista, 100).toNumber(), item.getValorLiquido()]);
-        valorComissao.comissao_valor = new Decimal(valorComissao.comissao_valor).toDecimalPlaces(2).toNumber();
+        valorComissao.comissao_valor = multiplicarVT([Decimal.div(vendedor.comissao_avista, 100).toNumber(), item.getValorLiquido()], 4);
+        // valorComissao.comissao_valor = new Decimal(valorComissao.comissao_valor).toDecimalPlaces(2).toNumber();
         valorComissao.comissao_percentual = vendedor.comissao_avista;
       } else processou = false;
     } else processou = false;

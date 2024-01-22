@@ -9,13 +9,14 @@ class CommonComponentsController {
         let service = new PageService<Empresas>(new Empresas(), req.headers["cnpj"] as string);
         let empresa = (await service.findByExemple(new Empresas())).content[0];
 
+        // Busca configurações de empresa
         let serviceEmpresaConfigs = new PageService<EmpresasConfiguracoes>(new EmpresasConfiguracoes(), req.headers["cnpj"] as string);
         let ex = new EmpresasConfiguracoes();
         ex.empresa = empresa;
+        let configEmpresa = (await serviceEmpresaConfigs.findByExemple(ex)).content[0];
 
-        let config = (await serviceEmpresaConfigs.findByExemple(ex)).content[0];
-
-        var img = "data:image/jpg" + ';base64,' + Buffer.from(config.img_relatorio, 'binary').toString('base64');
+        // converte imagem para relatório da empresa
+        var img = configEmpresa.getImgRelatorioAsBase64();
 
         res.render('components/header', {
             imgLogo: img,
@@ -39,7 +40,6 @@ const commonComponentsController = new CommonComponentsController();
 commonComponentsRouter.post('/header', commonComponentsController.renderRelatoriosHeader);
 commonComponentsRouter.get('/header', commonComponentsController.renderRelatoriosHeader);
 
-commonComponentsRouter.post('/footer', commonComponentsController.renderRelatoriosFooter);
 commonComponentsRouter.get('/footer', commonComponentsController.renderRelatoriosFooter);
 
 export default commonComponentsRouter;

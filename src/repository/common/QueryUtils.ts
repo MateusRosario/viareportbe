@@ -40,6 +40,7 @@ export function BuidWhereByModel(model, cnpj: string) {
 
   return retorno;
 }
+
 let o = {
   id: 555,
 };

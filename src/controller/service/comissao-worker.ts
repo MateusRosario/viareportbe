@@ -2,7 +2,7 @@ import { DevolucaoItem } from "../../model/entity/devolucao-item";
 import { Page } from "../../model/apoio/page";
 import { VendaItem } from "../../model/entity/VendaItem";
 import { ComissaoAdapterProvider, getComissaoHandlerOrder } from "../../regra-de-negocio/comissao/ComissaoHandlerImplementacoes";
-import { VendaItemComissao, VendaStatus } from "../../regra-de-negocio/comissao/VendaItemComissao";
+import { ComissaoTipo, VendaItemComissao, VendaStatus } from "../../regra-de-negocio/comissao/VendaItemComissao";
 import { BuidWhereByModel } from "../../repository/common/QueryUtils";
 import { getDBConnection } from "../../services/data-config-services/db-connection.service";
 import { isValid } from "../../services/FunctionsServices";
@@ -31,27 +31,31 @@ export class ComissaoWorker {
 
     await this.getComissaoListaTotal(cnpj, 1000, 0, vendaItem, null).then((lista) => {
       if (lista.content.length > 0) {
-
-
+        // Separa por diferenteis percentuais de comissão
         lista.content.forEach((item, index) => {
-          let key = map.get(item.comissao_indice + item.comissao_percentual.toString());
+          let comissaoIndice = map.get(item.comissao_indice + item.comissao_percentual.toString());
 
-          if (!isValid(key)) {
-            key = new ComissaoIndiceDicitionary();
-            key.descricaoDoIndice = item.comissao_indice;
-            key.comissao = somaVT([item.comissao_valor, key.comissao], 2);
-            key.percentual = item.comissao_percentual;
-            key.total = somaVT([key.total, item.vl_total], 2);
+          // Se comissaoIndice ainda não está no map
+          if (!isValid(comissaoIndice)) {
+            comissaoIndice = new ComissaoIndiceDicitionary();
+            comissaoIndice.descricaoDoIndice = item.comissao_indice;
+            comissaoIndice.comissao = somaVT([item.comissao_valor, comissaoIndice.comissao], 4);
+            comissaoIndice.percentual = item.comissao_percentual;
+            comissaoIndice.total = somaVT([comissaoIndice.total, item.vl_total], 4);
 
-            map.set(key.descricaoDoIndice + key.percentual, key);
+            map.set(comissaoIndice.descricaoDoIndice + comissaoIndice.percentual, comissaoIndice);
           } else {
-            key.comissao = somaVT([item.comissao_valor, key.comissao], 2);
-            key.total = somaVT([key.total, item.vl_total], 2);
+            comissaoIndice.comissao = somaVT([item.comissao_valor, comissaoIndice.comissao], 4);
+            comissaoIndice.total = somaVT([comissaoIndice.total, item.vl_total], 4);
           }
         });
 
       }
     });
+
+    // map.forEach((indice) => {
+    //   indice.percentual = indice.comissao * 100 / indice.total;
+    // })
 
     return map;
   }
@@ -134,11 +138,10 @@ export class ComissaoWorker {
       .offset(pageNormais.getOffset())
       .limit(pageNormais.size);
 
-//    // if (pageNormais.size === 50) console.log("<><><><><><><>", sqlVendaNormal.getQueryAndParameters());
-    console.log(sqlVendaNormal.getQueryAndParameters());
+    // console.log(sqlVendaNormal.getQueryAndParameters());
 
     return await sqlVendaNormal.getManyAndCount().then((value) => {
-//      // if (value[0].length === 50 ) console.log(value[0][0]);
+      // if (value[0].length === 50 ) console.log(value[0][0]);
       pageNormais.content = value[0];
       pageNormais.length = value[1];
       pageNormais.contentLength = pageNormais.content.length;
@@ -171,17 +174,18 @@ export class ComissaoWorker {
 //    console.log("===========================contador(getComissaoListaCancelada): ", this.meuContador);
     let itensCancelados = new Page<VendaItemComissao>();
     itensCancelados.content = [];
-    const pageCanceladas = new Page<VendaItem>();
-    pageCanceladas.size = sizePage;
-    pageCanceladas.number = numberPage;
+
+    const page = new Page<VendaItem>();
+    page.size = sizePage;
+    page.number = numberPage;
 
     const comissaoHandler = getComissaoHandlerOrder();
 
     let copyVendaItem: VendaItem = JSON.parse(JSON.stringify(vendaItem));
 
-    copyVendaItem.id_venda.data_cancelamento = { inicio: vendaItem.id_venda.data_saida["inicio"], fim: vendaItem.id_venda.data_saida["fim"] };
+    copyVendaItem.id_venda.data_cancelamento = null // { inicio: vendaItem.id_venda.data_saida["inicio"], fim: vendaItem.id_venda.data_saida["fim"] };
     copyVendaItem.id_venda.cancelada = "SIM";
-    copyVendaItem.id_venda.data_saida = null;
+    copyVendaItem.id_venda.data_saida = null; 
 
     let sqlVendaCancelada = getDBConnection(cnpj)
       .getRepository(VendaItem)
@@ -193,24 +197,31 @@ export class ComissaoWorker {
       .innerJoinAndSelect("v.id_forma", "fp")
       .where(BuidWhereByModel(getDBConnection(cnpj).getRepository(VendaItem).create(copyVendaItem), cnpj))
       .orderBy("v.data_saida asc, v.id");
+    
+    // console.log(sqlVendaCancelada.getQueryAndParameters());
 
     return await sqlVendaCancelada.getManyAndCount().then((value) => {
-      pageCanceladas.content = value[0];
-      pageCanceladas.length = value[1];
-      pageCanceladas.contentLength = pageCanceladas.content.length;
+      page.content = value[0];
+      page.length = value[1];
+      page.contentLength = page.content.length;
 
-      pageCanceladas.content.forEach((item) => {
+      page.content.forEach((item) => {
         const comissao = new VendaItemComissao();
-        comissaoHandler.calcularComissao(ComissaoAdapterProvider(item, VendaStatus.CANCELADA), comissao);
+        
+        if(new Date(item.id_venda.data_saida) < vendaItem.id_venda.data_saida["inicio"]) {
+          comissaoHandler.calcularComissao(ComissaoAdapterProvider(item, VendaStatus.CANCELADA_FP), comissao);
+        } else {
+          comissaoHandler.calcularComissao(ComissaoAdapterProvider(item, VendaStatus.CANCELADA), comissao);
+        }
 
         itensCancelados.content.push(comissao);
       });
 
-      itensCancelados.length = pageCanceladas.length;
-      itensCancelados.number = pageCanceladas.number;
-      itensCancelados.size = pageCanceladas.size;
-      itensCancelados.sort = pageCanceladas.sort;
-      itensCancelados.contentLength = pageCanceladas.contentLength;
+      itensCancelados.length = page.length;
+      itensCancelados.number = page.number;
+      itensCancelados.size = page.size;
+      itensCancelados.sort = page.sort;
+      itensCancelados.contentLength = page.contentLength;
 
 //      // console.log(itensCancelados);
 
@@ -244,6 +255,8 @@ export class ComissaoWorker {
         id_vendedor: vendaItem.id_venda.id_vendedor.id,
       });
 
+    // console.log(sqlDevolucao.getQueryAndParameters());
+
     return await sqlDevolucao.getManyAndCount().then((value) => {
       pageDevolvidas.content = value[0];
       pageDevolvidas.length = value[1];
@@ -251,7 +264,12 @@ export class ComissaoWorker {
 
       pageDevolvidas.content.forEach((item) => {
         const comissao = new VendaItemComissao();
-        comissaoHandler.calcularComissao(ComissaoAdapterProvider(item, VendaStatus.CANCELADA), comissao);
+
+        if(new Date(item.id_devolucao.id_pedido.data_saida) < vendaItem.id_venda.data_saida["inicio"]) {
+          comissaoHandler.calcularComissao(ComissaoAdapterProvider(item, VendaStatus.DEVOLVIDA_FP), comissao);
+        } else {
+          comissaoHandler.calcularComissao(ComissaoAdapterProvider(item, VendaStatus.DEVOLVIDA), comissao);
+        }
 
         itensDevolvidos.content.push(comissao);
       });
