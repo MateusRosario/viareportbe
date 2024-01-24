@@ -6,18 +6,39 @@
 
 <style>
     .default-footer-container {
+        z-index: -10;
+        display: none;
+        position: relative;
+        width: 100%;
+        height: 25px;
+    }
+
+    .footer-fixed {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+
+        width: 100%;
+        height: 25px;
+
         border-top: 0.05mm solid black;
         display: flex;
         justify-content: end;
-        width: 100%;
-        height: 40px;
     }
 
     .img-viatech-footer {
         height: 100%;
     }
+
+    @media print {
+        .default-footer-container {
+            display: block;
+        }
+    }
 </style>
 
-<div class="default-footer-container py-2" id="default-footer">
-    <img class="img-viatech-footer" src="<%=imgViaTech%>">
+<div class="default-footer-container" id="default-footer">
+    <div class="footer-fixed mx-2 px-2">
+        <img class="img-viatech-footer" src="<%=imgViaTech%>">
+    </div>
 </div>

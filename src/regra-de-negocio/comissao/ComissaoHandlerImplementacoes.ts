@@ -1,9 +1,8 @@
-import { Cliente } from './../../model/entity/Cliente';
 import { VendaItem } from './../../model/entity/VendaItem';
 import { DevolucaoItem } from "./../../model/entity/devolucao-item";
 import Decimal from "decimal.js";
 import { multiplicarVT } from "../../helpers/ArithmeticOperators";
-import { FormaPagamento, FormaPagamentoCondicaoEnum } from "../../model/entity/FormaPagamento";
+import { FormaPagamento } from "../../model/entity/FormaPagamento";
 import { Produto } from "../../model/entity/Produto";
 import { Vendedor } from "../../model/entity/Vendedor";
 import { isValid } from "../../services/FunctionsServices";
@@ -12,27 +11,7 @@ import { ComissaoTipo, VendaItemComissao, VendaStatus } from "./VendaItemComissa
 import { Venda } from "../../model/entity/Venda";
 import { Between, DataSource, Like, Repository } from 'typeorm';
 import { Empresas } from '../../model/entity/empresas';
-import { DevolucaoItemView } from '../../model/apoio/devolucao-item-view';
 import { DevolucaoVendaViewm } from '../../model/entity/devolucao-venda-viewm';
-import { Devolucao } from '../../model/entity/devolucao';
-
-export class ComissaoProdutoHandler extends ComissaoHandlerBase {
-  protected ifHandler(item: IComissaoAdapter, valorComissao: VendaItemComissao): boolean {
-    let processou = true;
-
-    if (!item.getProduto().gera_comissao) {
-      valorComissao.comissao_indice = ComissaoTipo.PRODUTO_SEM_COMISSAO;
-      valorComissao.comissao_valor = 0.0;
-    } else if (item.getProduto().comissao > 0.0) {
-      valorComissao.comissao_indice = ComissaoTipo.PRODUTO_COM_RESTRICAO;
-      valorComissao.comissao_valor = multiplicarVT([Decimal.div(item.getProduto().comissao, 100).toNumber(), item.getValorLiquido()], 4);
-      // valorComissao.comissao_valor = new Decimal(valorComissao.comissao_valor).toDecimalPlaces(2).toNumber();
-      valorComissao.comissao_percentual = item.getProduto().comissao;
-    } else processou = false;
-
-    return processou;
-  }
-}
 
 class ComissaoAdapterVendaItem implements IComissaoAdapter {
   private fator: number = 1;
@@ -45,7 +24,7 @@ class ComissaoAdapterVendaItem implements IComissaoAdapter {
     if (!vendaItem.id_venda.id_vendedor) throw new TypeError("ComissaoAdapterVendaItem: A Venda do Objeto VendaItem não possui um vendedor." + ` Venda (${vendaItem.id_venda.id})`);
     if (!vendaItem.id_venda.id_forma) throw new TypeError("ComissaoAdapterVendaItem: A Venda do Objeto VendaItem não possui uma forma de pagamento." + ` Venda (${vendaItem.id_venda.id})`);
 
-    this.fator = this.vendaStatus === VendaStatus.CANCELADA ? -1 : 1;
+    this.fator = this.vendaStatus === VendaStatus.CANCELADA || this.vendaStatus === VendaStatus.CANCELADA_FP ? -1 : 1;
   }
 
   getId(): number {
@@ -84,7 +63,7 @@ class ComissaoAdapterVendaItem implements IComissaoAdapter {
 class ComissaoAdapterDevolucaoItem implements IComissaoAdapter {
   private fator: number = -1;
 
-  constructor(private devolucaoItem: DevolucaoItem, private vendaStatus: VendaStatus.DEVOLVIDA) {
+  constructor(private devolucaoItem: DevolucaoItem, private vendaStatus: VendaStatus) {
     if (!devolucaoItem) throw new TypeError("ComissaoAdapterDevolucaoItem: Objeto DevolucaoItem não instanciado.");
     if ((devolucaoItem.id ? devolucaoItem.id : 0) === 0) throw new TypeError("ComissaoAdapterDevolucaoItem: Objeto DevolucaoItem vazio.");
     if (!devolucaoItem.id_produto) throw new TypeError("ComissaoAdapterDevolucaoItem: Objeto DevolucaoItem não possui um produto.") + ` DevolucaoItem (${devolucaoItem.id})`;
@@ -120,7 +99,7 @@ class ComissaoAdapterDevolucaoItem implements IComissaoAdapter {
     return multiplicarVT([this.fator, this.devolucaoItem.vl_total]);
   }
   getData(): Date {
-    return this.devolucaoItem.id_devolucao.data as Date;
+    return this.devolucaoItem.id_devolucao.id_pedido.data_saida as Date;
   }
   getStatus(): VendaStatus {
     return this.vendaStatus;
@@ -132,7 +111,7 @@ class ComissaoAdapterDevolucaoItem implements IComissaoAdapter {
 
 export function ComissaoAdapterProvider(obj: VendaItem | DevolucaoItem, status: VendaStatus): IComissaoAdapter {
   if (obj instanceof VendaItem) return new ComissaoAdapterVendaItem(obj as VendaItem, status);
-  else if (obj instanceof DevolucaoItem) return new ComissaoAdapterDevolucaoItem(obj as DevolucaoItem, VendaStatus.DEVOLVIDA);
+  else if (obj instanceof DevolucaoItem) return new ComissaoAdapterDevolucaoItem(obj as DevolucaoItem, status);
   else throw new Error("Valor não mapeado no ProviderComissaoAdapter. Objeto: " + JSON.stringify(obj));
 }
 
@@ -153,6 +132,24 @@ export class ComissaoGrupoHandler extends ComissaoHandlerBase {
         valorComissao.comissao_percentual = grupo.comissao_vendedor;
       } else processou = false;
     } else processou = false;
+    return processou;
+  }
+}
+
+export class ComissaoProdutoHandler extends ComissaoHandlerBase {
+  protected ifHandler(item: IComissaoAdapter, valorComissao: VendaItemComissao): boolean {
+    let processou = true;
+
+    if (!item.getProduto().gera_comissao) {
+      valorComissao.comissao_indice = ComissaoTipo.PRODUTO_SEM_COMISSAO;
+      valorComissao.comissao_valor = 0.0;
+    } else if (item.getProduto().comissao > 0.0) {
+      valorComissao.comissao_indice = ComissaoTipo.PRODUTO_COM_RESTRICAO;
+      valorComissao.comissao_valor = multiplicarVT([Decimal.div(item.getProduto().comissao, 100).toNumber(), item.getValorLiquido()], 4);
+      // valorComissao.comissao_valor = new Decimal(valorComissao.comissao_valor).toDecimalPlaces(2).toNumber();
+      valorComissao.comissao_percentual = item.getProduto().comissao;
+    } else processou = false;
+
     return processou;
   }
 }

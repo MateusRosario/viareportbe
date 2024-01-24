@@ -21,7 +21,6 @@ export enum VendaStatus {
     DEVOLVIDA_FP = "DEVOLVIDA (F.P.)"
 }
 
-
 export class VendaItemComissao {
     id: number;
     id_venda: number;

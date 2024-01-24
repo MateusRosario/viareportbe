@@ -183,7 +183,7 @@ export class ComissaoWorker {
 
     let copyVendaItem: VendaItem = JSON.parse(JSON.stringify(vendaItem));
 
-    copyVendaItem.id_venda.data_cancelamento = null // { inicio: vendaItem.id_venda.data_saida["inicio"], fim: vendaItem.id_venda.data_saida["fim"] };
+    copyVendaItem.id_venda.data_cancelamento = { inicio: vendaItem.id_venda.data_saida["inicio"], fim: vendaItem.id_venda.data_saida["fim"] };
     copyVendaItem.id_venda.cancelada = "SIM";
     copyVendaItem.id_venda.data_saida = null; 
 

@@ -1,45 +1,69 @@
 <script>
-    const formatterCom = new Intl.NumberFormat("pt-BR", {
-        style: "currency",
-        currency: "BRL",
-    });
-
-    const cnpjEmpresa = "<%=cnpj %>";
     const baseURL = "http://localhost:9005";
+    const cnpjEmpresa = "<%= cnpj %>";
 
     let datainicio;
     let datafim;
-    let selectvendedor;
-    let pesquisando = false;
+    let vendedorSelectRef;
+
+    let carregandoDados = false;
 
     const myheaders = new Headers();
-
     myheaders.append("cnpj", cnpjEmpresa);
     myheaders.append("Content-Type", "application/json");
 
-    class Empresa {
-        constructor() {
-            this.id = null;
-            this.cnpj = null;
-            this.nome = null;
-            this.razao_social = null;
-            this.endereco = null;
-            this.cep = null;
-            this.bairro = null;
-            this.cidade = null;
-            this.uf = null;
-        }
-    }
-
-    let _empresa = new Empresa();
-
-    const size = 50;
-    let page = 0;
+    const pageSize = 50;
+    let pageCarregada = 0;
     let maxLenght = 0;
     let maximoAtingido = false;
 
     let comissaoSoma = 0;
     let vendasSoma = 0;
+
+    function startDates() {
+        let primaryday = new Date();
+        let lastday = new Date();
+
+        primaryday.setFullYear(
+            primaryday.getFullYear(),
+            primaryday.getMonth(),
+            1
+        );
+
+        lastday.setFullYear(lastday.getFullYear(), lastday.getMonth() + 1, 0);
+
+        datainicio = $("#iniciodata");
+        datainicio.val(primaryday.toISOString().split("T")[0]);
+
+        datafim = $("#fimdata");
+        datafim.val(lastday.toISOString().split("T")[0]);
+    }
+
+    function loadVendedores() {
+        fetch("/v1/vendedor/get_by_model", {
+            method: "POST",
+            headers: myheaders,
+            body: JSON.stringify({
+                ativo: "SIM",
+                pageInfo: {
+                    size: 1000,
+                    page: 0,
+                },
+            }),
+        }).then((response) => {
+            response.json().then((data) => {
+                for (var index = 0; index < data.length; index++) {
+                    $("#vendedor").append(
+                        '<option value="' +
+                        data.content[index].id +
+                        '">' +
+                        data.content[index].nome +
+                        "</option>"
+                    );
+                }
+            });
+        });
+    }
 
     async function loadHeader(vendedor) {
         $("#header-placeholder").empty();
@@ -51,7 +75,7 @@
         await insertHeader_Global(
             "RELATÓRIO DE COMISSÕES",
             {
-                Período: `${datainicio.val()} - ${datafim.val()}`,
+                Período: `${formatDateToLocal_Global(datainicio.val())} - ${formatDateToLocal_Global(datafim.val())}`,
                 Vendedor: `${vendedor}`,
             },
             "#header-placeholder",
@@ -70,15 +94,15 @@
 
     async function filtrarResumo() {
         await fetch(
-            `/v1/comissao/get_comissao_group_by_indice?dataInicio=${formatDateToAPI(
+            `/v1/comissao/get_comissao_group_by_indice?dataInicio=${formatDateToAPI_Global(
                 datainicio.val(),
                 5,
                 1
-            )}&dataFim=${formatDateToAPI(
+            )}&dataFim=${formatDateToAPI_Global(
                 datafim.val(),
                 19,
                 59
-            )}&idVendedor=${parseInt(selectvendedor.val())}`,
+            )}&idVendedor=${parseInt(vendedorSelectRef.val())}`,
             {
                 method: "GET",
                 headers: myheaders,
@@ -90,7 +114,7 @@
 
                     let tableBody = $("#table-dados-resumo");
 
-                    if (page === 0) tableBody.empty();
+                    if (pageCarregada === 0) tableBody.empty();
 
                     let totalVendas = 0.0;
                     let totalComissao = 0.0;
@@ -101,178 +125,9 @@
                             tableBody.append(
                                 $(`<tr class="table-row">`)
                                     .append(`<td style="width: 40px">${valor.descricaoDoIndice}</td>`)
-                                    .append(`<td style="text-align: right; padding-right: 5px; width: 25px;">${formatterCom.format(valor.total)}</td>`)
+                                    .append(`<td style="text-align: right; padding-right: 5px; width: 25px;">${formatMoeda_Global.format(valor.total)}</td>`)
                                     .append(`<td style="text-align: right; padding-right: 5px; width: 25px;">${parseFloat(valor.percentual).toFixed(2)}</td>`)
-                                    .append(`<td style="text-align: right; padding-right: 5px; width: 25px;">${formatterCom.format(valor.comissao)}</td>`)
-                            );
-
-                            totalVendas += valor.total;
-                            totalComissao += valor.comissao;
-                        }
-                    }
-
-                    //$("tfoot").remove();
-
-                    let tableFoot = $("#totais-resumo");
-                    tableFoot.empty();
-
-                    tableBody.append(
-                        $(
-                            `<th scope="row" class="ps-2"></th><td class="text-end" style="padding-right: 5px">${formatterCom.format(
-                                totalVendas
-                            )}</td><td></td><td class="text-end pe-2">${formatterCom.format(
-                                totalComissao
-                            )}</td>`
-                        )
-                    );
-                },
-                (erro) => {
-                    let tableBody = $("#table-dados-resumo");
-
-                    tableBody.empty();
-                }
-            );
-        });
-    }
-
-    async function filtrarItens(todasAsPaginas = false, append = true) {
-        await fetch(
-            `/v1/comissao/get_comissao_por_item?dataInicio=${formatDateToAPI(
-                datainicio.val(),
-                5,
-                1
-            )}&dataFim=${formatDateToAPI(
-                datafim.val(),
-                19,
-                59
-            )}&idVendedor=${parseInt(selectvendedor.val())}&numberPage=${page}${todasAsPaginas ? "&todasAsPaginas=true" : ""
-            }`,
-            {
-                method: "GET",
-                headers: myheaders,
-                // body: JSON.stringify({
-                //     "id_venda": {
-                //         "data_saida": {
-                //             "inicio": datainicio.val(),
-                //             "fim": datafim.val()
-                //         },
-                //         "gerado": "SIM",
-                //         "id_vendedor": {
-                //             "id": parseInt(selectvendedor.val())
-                //         }
-                //     },
-                //     "pageInfo": {
-                //         "size": 100,
-                //         "page": page
-                //     }
-                // })
-            }
-        ).then(async (response) => {
-            await response.json().then((data) => {
-                maxLenght = data.length;
-
-                console.log('Itens', data);
-
-                let tableBody = $("#table-dados");
-
-                if (!append || page === 0) {
-                    tableBody.empty();
-                    comissaoSoma = 0;
-                    vendasSoma = 0;
-
-                    if (todasAsPaginas) {
-                        page = data.number;
-                    }
-                }
-
-                for (let index = 0; index < data.content.length; index++) {
-                    const valor = data.content[index];
-                    // tableBody.append(
-                    //     $(`<tr class="table-row">`)
-                    //         .append(`<td style="width: 40px">${valor.id_venda}</td>`)
-                    //         .append(`<td style="width: 70px; text-align: center">${formatarDate(valor.data_saida)}</td>`)
-                    //         .append(`<td  style="width: 300px">( ${valor.id_produto} ) ${valor.nome_produto}</td>`)
-                    //         .append(`<td style="width: 80px">${valor.comissao_indice}</td>`)
-                    //         .append(`<td style="width: 15px">${parseFloat(valor.comissao_percentual).toFixed(2)}</td>`)
-                    //         .append(`<td style="text-align: right; padding-right: 5px;">${formatterCom.format(valor.comissao_valor)}</td>`)
-                    // );
-                    tableBody.append(
-                        $(`<tr class="table-row">`)
-                            .append(`<td>${valor.id_venda}</td>`)
-                            .append(`<td class="text-center">${formatarDate(valor.data_saida)}</td>`)
-                            .append(`<td>( ${valor.id_produto} ) ${valor.nome_produto}</td>`)
-                            .append(`<td> ${valor.status}</td>`)
-                            .append(`<td class="text-end pe-5">${formatterCom.format(valor.vl_total)}</td>`)
-                            .append(`<td>${valor.comissao_indice}</td>`)
-                            .append(`<td>${parseFloat(valor.comissao_percentual).toFixed(2)}</td>`)
-                            .append(`<td style="text-align: right; padding-right: 5px;">${formatterCom.format(valor.comissao_valor)}</td>`
-                            )
-                    );
-
-                    comissaoSoma += valor.comissao_valor;
-                    vendasSoma += valor.vl_total;
-                }
-
-                maximoAtingido = (page + 1) * 50 >= maxLenght;
-
-                let tableTotal = $("#total-dados");
-                tableTotal.empty();
-                if (todasAsPaginas || maximoAtingido) {
-                    tableTotal
-                        .append(`<td>TOTAL:</td>`)
-                        .append(`<td></td>`)
-                        .append(`<td></td>`)
-                        .append(`<td></td>`)
-                        .append(`<td class="pe-5" style="text-align: right; padding-right: 5px;">${formatterCom.format(vendasSoma)}</td>`)
-                        .append(`<td></td>`)
-                        .append(`<td></td>`)
-                        .append(`<td style="text-align: right; padding-right: 5px;">${formatterCom.format(comissaoSoma)}</td>`
-                        );
-
-                    $("#rowBtnFinal").prop("hidden", "true");
-                }
-
-                console.log("TERMINOU DE RENDERIZAR OS ITENS");
-            });
-        });
-    }
-
-    async function filtrarResumo() {
-        await fetch(
-            `/v1/comissao/get_comissao_group_by_indice?dataInicio=${formatDateToAPI(
-                datainicio.val(),
-                5,
-                1
-            )}&dataFim=${formatDateToAPI(
-                datafim.val(),
-                19,
-                59
-            )}&idVendedor=${parseInt(selectvendedor.val())}`,
-            {
-                method: "GET",
-                headers: myheaders,
-            }
-        ).then(async (response) => {
-            await response.json().then(
-                (data) => {
-                    console.log('Resumo:', data);
-
-                    let tableBody = $("#table-dados-resumo");
-
-                    if (page === 0) tableBody.empty();
-
-                    let totalVendas = 0.0;
-                    let totalComissao = 0.0;
-
-                    if (data instanceof Array) {
-                        for (let index = 0; index < data.length; index++) {
-                            const valor = data[index];
-                            tableBody.append(
-                                $(`<tr class="table-row">`)
-                                    .append(`<td style="width: 40px">${valor.descricaoDoIndice}</td>`)
-                                    .append(`<td style="text-align: right; padding-right: 5px; width: 25px;">${formatterCom.format(valor.total)}</td>`)
-                                    .append(`<td style="text-align: right; padding-right: 5px; width: 25px;">${parseFloat(valor.percentual).toFixed(2)}</td>`)
-                                    .append(`<td style="text-align: right; padding-right: 5px; width: 25px;">${formatterCom.format(valor.comissao)}</td>`)
+                                    .append(`<td style="text-align: right; padding-right: 5px; width: 25px;">${formatMoeda_Global.format(valor.comissao)}</td>`)
                             );
 
                             totalVendas += valor.total;
@@ -280,7 +135,7 @@
                         }
 
                         $("#total-confere-indice").append(
-                            `Total: ${formatterCom.format(totalComissao)}`
+                            `Total: ${formatMoeda_Global.format(totalComissao)}`
                         );
                     }
 
@@ -291,9 +146,9 @@
 
                     tableBody.append(
                         $(
-                            `<th scope="row" class="ps-2"></th><td class="text-end" style="padding-right: 5px">${formatterCom.format(
+                            `<th scope="row" class="ps-2"></th><td class="text-end" style="padding-right: 5px">${formatMoeda_Global.format(
                                 totalVendas
-                            )}</td><td></td><td class="text-end pe-2">${formatterCom.format(
+                            )}</td><td></td><td class="text-end pe-2">${formatMoeda_Global.format(
                                 totalComissao
                             )}</td>`
                         )
@@ -309,15 +164,93 @@
         });
     }
 
+    async function filtrarItens(todasAsPaginas = false, append = true) {
+        await fetch(
+            `/v1/comissao/get_comissao_por_item?dataInicio=${formatDateToAPI_Global(
+                datainicio.val(),
+                5,
+                1
+            )}&dataFim=${formatDateToAPI_Global(
+                datafim.val(),
+                19,
+                59
+            )}&idVendedor=${parseInt(vendedorSelectRef.val())}&numberPage=${pageCarregada}${todasAsPaginas ? "&todasAsPaginas=true" : ""
+            }`,
+            {
+                method: "GET",
+                headers: myheaders,
+            }
+        ).then(async (response) => {
+            await response.json().then((data) => {
+                maxLenght = data.length;
+
+                console.log('Itens', data);
+
+                let tableBody = $("#table-dados");
+
+                if (!append || pageCarregada === 0) {
+                    tableBody.empty();
+                    comissaoSoma = 0;
+                    vendasSoma = 0;
+
+                    if (todasAsPaginas) {
+                        pageCarregada = data.number;
+                    }
+                }
+
+                for (let index = 0; index < data.content.length; index++) {
+                    const valor = data.content[index];
+
+                    tableBody.append(
+                        $(`<tr class="table-row">`)
+                            .append(`<td class="col-1">${valor.id_venda}</td>`)
+                            .append(`<td class="text-center col-1">${formatDateToLocal_Global(valor.data_saida)}</td>`)
+                            .append(`<td class="col-2 nowrap-col-ellipsis">( ${valor.id_produto} ) ${valor.nome_produto}</td>`)
+                            .append(`<td class="col-2 nowrap-col"> ${valor.status}</td>`)
+                            .append(`<td class="text-end pe-2 col-1">${formatMoeda_Global.format(valor.vl_total)}</td>`)
+                            .append(`<td class="col-2 nowrap-col">${valor.comissao_indice}</td>`)
+                            .append(`<td class="col-1 text-end">${parseFloat(valor.comissao_percentual).toFixed(2).replace('.', ',')} </td>`)
+                            .append(`<td class="col-1" style="text-align: right; padding-right: 5px;">${formatMoeda_Global.format(valor.comissao_valor)}</td>`
+                            )
+                    );
+
+                    comissaoSoma += valor.comissao_valor;
+                    vendasSoma += valor.vl_total;
+                }
+
+                maximoAtingido = (pageCarregada + 1) * 50 >= maxLenght;
+
+                let tableTotal = $("#total-dados");
+                tableTotal.empty();
+                if (todasAsPaginas || maximoAtingido) {
+                    tableTotal
+                        .append(`<td>TOTAL:</td>`)
+                        .append(`<td></td>`)
+                        .append(`<td></td>`)
+                        .append(`<td></td>`)
+                        .append(`<td class="pe-2 text-end">${formatMoeda_Global.format(vendasSoma)}</td>`)
+                        .append(`<td></td>`)
+                        .append(`<td></td>`)
+                        .append(`<td style="text-align: right; padding-right: 5px;">${formatMoeda_Global.format(comissaoSoma)}</td>`
+                        );
+
+                    $("#rowBtnCarregarTudo").prop("hidden", "true");
+                }
+
+                console.log("TERMINOU DE RENDERIZAR OS ITENS");
+            });
+        });
+    }
+
     async function filtrar(todasAsPaginas = false) {
-        if (!pesquisando) {
+        if (!carregandoDados) {
             $(".container-table").attr("hidden", "true");
 
             $("#container-loader").removeAttr("hidden");
 
-            $("#rowBtnFinal").removeAttr("hidden");
+            $("#rowBtnCarregarTudo").removeAttr("hidden");
 
-            pesquisando = true;
+            carregandoDados = true;
 
             $("#total-confere-indice").empty();
             let itens = filtrarItens(todasAsPaginas, false);
@@ -325,7 +258,7 @@
 
             await Promise.all([itens, resumo]).then((v) => {
                 console.log("RESOLVEU filtrarItens, filtrarResumo");
-                pesquisando = false;
+                carregandoDados = false;
 
                 $(".container-table").removeAttr("hidden");
 
@@ -334,198 +267,96 @@
         }
     }
 
-    function formatDateToAPI(date, hour, minute) {
-        let _date = new Date(date);
-        _date.setUTCHours(hour, minute);
+    function onFimTablelaCarregarMais() {
+            const jaCarregado = (pageCarregada + 1) * pageSize;
 
-        return _date.toISOString();
+            if (jaCarregado >= maxLenght) {
+                maximoAtingido = true;
+            }
+
+            if(!maximoAtingido) {
+                pageCarregada++;
+                filtrarItens(false, true);
+            }
+        }
+
+    function addListenerFimTabela() {
+        const refFimTabela = $('#total-dados');
+        const verificaChegouFimTabela = elementoVisivelState_Global(refFimTabela, onFimTablelaCarregarMais);
+
+        $(window).on('DOMContentLoaded load resize scroll', verificaChegouFimTabela);
     }
 
-    formatarDate = (datestring) => {
-        let _array = datestring.split("T")[0].split("-");
-        let retorno = _array[2] + "/" + _array[1] + "/" + _array[0];
-        return retorno;
-    };
+    /** carrega vendedores **/
+    loadVendedores();
 
     setTimeout(async () => {
-        let primaryday = new Date();
-        let lastday = new Date();
+        startDates();
 
-        primaryday.setFullYear(
-            primaryday.getFullYear(),
-            primaryday.getMonth(),
-            1
-        );
-        lastday.setFullYear(lastday.getFullYear(), lastday.getMonth() + 1, 0);
+        vendedorSelectRef = $("#vendedor");
 
-        datainicio = $("#iniciodata");
-        datainicio.val(primaryday.toISOString().split("T")[0]);
+        function addListenerBotaoImpressao() {
+            $("#btnImpressao").on("click", async (event) => {
+                pageCarregada = 0;
 
-        datafim = $("#fimdata");
-        datafim.val(lastday.toISOString().split("T")[0]);
+                const loading = [
+                    filtrar(true, false),
+                    loadHeader(vendedorSelectRef.find(":selected").text()),
+                    loadFooter(),
+                ];
 
-        selectvendedor = $("#vendedor");
-
-        $("#btnImpressao").on("click", async (event) => {
-            page = 0;
-
-            let nome_empresa = $("#nome-empresa");
-            nome_empresa.empty();
-            let nome_vendedor = $("#nome-vendedor");
-            nome_vendedor.empty();
-            let date_inicio_header = $("#date-inicio-header");
-            date_inicio_header.empty();
-            let date_fim_header = $("#date-fim-header");
-            date_fim_header.empty();
-            let date_impresso_em = $("#impresso-em");
-            date_impresso_em.empty();
-
-            // console.log(_empresa.nome, " / ", selectvendedor.html(), " / ", datainicio.val(), " / ", datafim.val());
-
-            // console.log(selectvendedor);
-
-            nome_empresa.append(_empresa.nome);
-            nome_vendedor.append(selectvendedor.find(":selected").text());
-            date_inicio_header.append(formatarDate(datainicio.val()));
-            date_fim_header.append(formatarDate(datafim.val()));
-            date_impresso_em.append(new Date().toLocaleString());
-
-            const loading = [
-                filtrar(true, false),
-                loadHeader(selectvendedor.find(":selected").text()),
-            ];
-
-            await Promise.all(loading).then(async (value) => {
-                window.print();
-            });
-        });
-
-        $("#btnfiltrar").on("click", (event) => {
-            page = 0;
-            maximoAtingido = false;
-
-            let nome_empresa = $("#nome-empresa");
-            nome_empresa.empty();
-            let nome_vendedor = $("#nome-vendedor");
-            nome_vendedor.empty();
-            let date_inicio_header = $("#date-inicio-header");
-            date_inicio_header.empty();
-            let date_fim_header = $("#date-fim-header");
-            date_fim_header.empty();
-
-            nome_empresa.append(_empresa.nome);
-            nome_vendedor.append(selectvendedor.find(":selected").text());
-            date_inicio_header.append(
-                new Date(datainicio.val()).toLocaleDateString()
-            );
-            date_fim_header.append(
-                new Date(datafim.val()).toLocaleDateString()
-            );
-
-            $("#table-dados-resumo").empty();
-
-            filtrar();
-        });
-
-        $("#btnFinal").on("click", (event) => {
-            let nome_empresa = $("#nome-empresa");
-            nome_empresa.empty();
-            let nome_vendedor = $("#nome-vendedor");
-            nome_vendedor.empty();
-            let date_inicio_header = $("#date-inicio-header");
-            date_inicio_header.empty();
-            let date_fim_header = $("#date-fim-header");
-            date_fim_header.empty();
-
-            nome_empresa.append(_empresa.nome);
-            nome_vendedor.append(selectvendedor.find(":selected").text());
-            date_inicio_header.append(datainicio.val());
-            date_fim_header.append(datafim.val());
-
-            filtrar(true);
-        });
-
-        await fetch(`/v1/empresa/get_by_model`, {
-            method: "POST",
-            headers: myheaders,
-            body: JSON.stringify({
-                id: 1,
-            }),
-        }).then(
-            (response) => {
-                response.json().then((value) => {
-                    _empresa = value.content[0];
-                    console.log(_empresa);
+                await Promise.all(loading).then(async (value) => {
+                    window.print();
                 });
-            },
-            (erro) => {
-                alert(
-                    "Não foi possível buscar os dados da empresa. Não será possível filtrar as informações. Erro: ",
-                    erro["message"]
-                );
-            }
-        );
+            });
+        }
+
+        function addListenerBotaoFiltrar() {
+            $("#btnfiltrar").on("click", (event) => {
+                pageCarregada = 0;
+                maximoAtingido = false;
+
+                $("#table-dados-resumo").empty();
+
+                filtrar();
+            });
+
+        }
+
+        function addListenerBotaoCarregarTudo() {
+            $("#btnCarregarTudo").on("click", (event) => {
+                filtrar(true);
+            });
+        }
+
+        addListenerBotaoImpressao();
+        addListenerBotaoFiltrar();
+        addListenerBotaoCarregarTudo();
 
         $(document).ready(function () {
-            // loadFooter();
-
-            $("#container-table-body").on("scroll", (event) => {
-                const jaCarregado = (page + 1) * size;
-                if (jaCarregado >= maxLenght) {
-                    maximoAtingido = true;
-                }
-
-                if (
-                    event.target.scrollTop + event.target.clientHeight >=
-                    event.target.scrollHeight &&
-                    !pesquisando &&
-                    !maximoAtingido
-                ) {
-                    console.log(
-                        "Carregar mais itens: ",
-                        page,
-                        "=>",
-                        page + 1,
-                        "- Falta: ",
-                        maxLenght - jaCarregado
-                    );
-                    page++;
-                    filtrarItens(false, true);
-                }
-            });
+            addListenerFimTabela();
         });
     }, 100);
-
-    fetch("/v1/vendedor/get_by_model", {
-        method: "POST",
-        headers: myheaders,
-        body: JSON.stringify({
-            ativo: "SIM",
-            pageInfo: {
-                size: 1000,
-                page: 0,
-            },
-        }),
-    }).then((response) => {
-        response.json().then((data) => {
-            for (var index = 0; index < data.length; index++) {
-                $("#vendedor").append(
-                    '<option value="' +
-                    data.content[index].id +
-                    '">' +
-                    data.content[index].nome +
-                    "</option>"
-                );
-            }
-        });
-    });
 </script>
 
 <style>
     .container-wrapper {
         display: flex;
         flex-direction: column;
-        max-height: calc(100vh - 7em);
+        /* max-height: calc(100vh - 7em); */
+    }
+
+    .nowrap-col {
+        text-wrap: nowrap;
+        white-space: nowrap;
+    }
+
+    .nowrap-col-ellipsis {
+        font-size: smaller;
+        overflow: hidden;
+        text-wrap: nowrap;
+        white-space: nowrap;
+        text-overflow: ellipsis !important;
     }
 
     .form {
@@ -600,10 +431,6 @@
         animation: spin 2s linear infinite;
     }
 
-    footer {
-        flex-shrink: 0;
-    }
-
     /* Safari */
     @-webkit-keyframes spin {
         0% {
@@ -647,6 +474,10 @@
         padding: 0;
     }
 
+    .wrapper {
+        max-height: 100%;
+    }
+
     .myTable tbody tr td {
         font-size: 7pt !important;
         line-height: 8pt !important;
@@ -659,10 +490,6 @@
 
     .myTable tfoot tr {
         margin-top: 50px;
-    }
-
-    .wrapper {
-        max-height: 100%;
     }
 
     .report-header {
@@ -679,18 +506,6 @@
         font-weight: bold;
     }
 
-    .nome-empresa {
-        font-size: 1.2rem;
-        font-weight: bold;
-        padding: 0 5px;
-        margin: 0 0 5px 0;
-    }
-
-    .impresso-em {
-        display: inline-flex;
-        text-align: right;
-    }
-
     .titulo-relatorio {
         padding: 5px;
         font-size: 1rem;
@@ -698,14 +513,8 @@
 
     #container-table-body {
         /* height: 100% !important;    */
-        overflow: visible !important;
-        max-height: 100% !important;
-    }
-
-    #footer-placeholder {
-        position: fixed;
-        bottom: 0;
-        width: max-content;
+        /* overflow: hidden !important;
+        max-height: 100% !important; */
     }
 
     @page {
@@ -713,8 +522,8 @@
         size: A4;
         margin-top: 3mm;
         margin-left: 4mm;
-        margin-bottom: 2mm;
-        margin-right: 1mm;
+        margin-bottom: 4mm;
+        margin-right: 4mm;
     }
 </style>
 
@@ -751,103 +560,83 @@
 
     <div id="header-placeholder" class="report-header mb-2"></div>
 
-    <!-- <section id="report-header" class="report-header mb-2">
-        <div>
-            <div id="nome-empresa" class="nome-empresa"></div>
-            <div class="impresso-em">
-                <div>Impresso Em: </div>
-                <div id="impresso-em"></div>
-            </div>
-            <div class="titulo-relatorio">RELATÓRIO DE COMISSÕES</div>
-        </div>
-        <div class="div-label">
-            <div class="label-header">VENDEDOR:</div>
-            <div id="nome-vendedor"></div>
-
-            <div id="periodo-container" class="div-label">
-                <div class="label-header">PERÍODO:</div>
-                <div id="date-inicio-header" class="date"></div>
-                <div> - </div>
-                <div id="date-fim-header" class="date"></div>
-            </div>
-        </div>
-    </section> -->
-
-    <div class="row">
-        <div id="container-table-body-resumo" class="table-responsive">
-            <div class="titulo-sessao">COMISSÃO POR ÍNDICE</div>
-            <table id="table-resumo" class="table table-striped  table-hover myTable">
-                <thead>
-                    <tr>
-                        <th scope="col">Descrição</th>
-                        <th scope="col" class="text-end">Vendas Totais</th>
-                        <th scope="col" class="text-end">Percentual Final Total</th>
-                        <th scope="col" class="text-end pe-2">Comissão</th>
-                    </tr>
-                </thead>
-                <tbody id="table-dados-resumo">
-
-                </tbody>
-                <tfoot id="totais-resumo">
-
-                </tfoot>
-            </table>
-        </div>
-    </div>
-
     <table class="w-100">
         <tbody style="margin-bottom: 20px;">
             <tr>
                 <td class="p-2">
-                    <div class="titulo-sessao">
-                        LISTAGEM
-                        <div id="total-confere-indice"></div>
+                    <div class="row">
+                        <div id="container-table-body-resumo" class="table-responsive">
+                            <div class="titulo-sessao">COMISSÃO POR ÍNDICE</div>
+                            <table id="table-resumo" class="table table-sm tabela-listrada table-hover myTable">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Descrição</th>
+                                        <th scope="col" class="text-end">Vendas Totais</th>
+                                        <th scope="col" class="text-end">Percentual Final Total</th>
+                                        <th scope="col" class="text-end pe-2">Comissão</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="table-dados-resumo">
+
+                                </tbody>
+                                <tfoot id="totais-resumo">
+
+                                </tfoot>
+                            </table>
+                        </div>
                     </div>
-                    <div class="table-wrapper" id="container-table-body" style="overflow-x: auto">
-                        <table class="table table-striped table-hover myTable" style="max-height: 99%">
-                            <thead>
-                                <tr>
-                                    <th scope="col">Cód</th>
-                                    <th scope="col" class="text-center">Data</th>
-                                    <th scope="col">Produto</th>
-                                    <th scope="col">Tipo</th>
-                                    <th scope="col" class="text-end pe-5">Venda</th>
-                                    <th scope="col">Condição</th>
-                                    <th scope="col">%</th>
-                                    <th scope="col" class="text-end pe-2">Comissão</th>
-                                </tr>
-                            </thead>
-                            <tbody id="table-dados"></tbody>
-                            <tbody>
-                                <tr id="total-dados"></tr>
-                            </tbody>
-                            <tfoot>
-                                <tr id="rowBtnFinal">
-                                    <th scope="col"></th>
-                                    <th scope="col"></th>
-                                    <th scope="col"></th>
-                                    <th scope="col"></th>
-                                    <th scope="col"></th>
-                                    <th scope="col"></th>
-                                    <th scope="col"></th>
-                                    <th scope="col" class="text-end pe-2">
-                                        <button type="button" class="btnAll mt-4" id="btnFinal">
-                                            CARREGAR TUDO
-                                        </button>
-                                    </th>
-                                </tr>
-                            </tfoot>
-                        </table>
+
+                    <div>
+                        <div class="titulo-sessao">
+                            LISTAGEM
+                            <div id="total-confere-indice"></div>
+                        </div>
+                        <div id="container-table-body">
+                            <table class="table table-sm tabela-listrada table-hover myTable" style="max-height: 99%">
+                                <thead>
+                                    <tr>
+                                        <th scope="col" class="col-1">Cód</th>
+                                        <th scope="col" class="text-center col-1">Data</th>
+                                        <th scope="col" class="col-2 nowrap-col-ellipsis">Produto</th>
+                                        <th scope="col" class="col-2 nowrap-col">Tipo</th>
+                                        <th scope="col" class="col-1 text-end pe-2">Venda</th>
+                                        <th scope="col" class="col-2 nowrap-col">Condição</th>
+                                        <th scope="col" class="col-1 text-end nowrap-col">Percentutal (%)</th>
+                                        <th scope="col" class="col-1 text-end pe-2">Comissão</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="table-dados"></tbody>
+                                <tbody>
+                                    <tr id="total-dados"></tr>
+                                </tbody>
+                                <tfoot>
+                                    <tr id="rowBtnCarregarTudo">
+                                        <th scope="col"></th>
+                                        <th scope="col"></th>
+                                        <th scope="col"></th>
+                                        <th scope="col"></th>
+                                        <th scope="col"></th>
+                                        <th scope="col"></th>
+                                        <th scope="col"></th>
+                                        <th scope="col" class="text-end pe-2">
+                                            <button type="button" class="btnAll btn-sm" id="btnCarregarTudo">
+                                                CARREGAR TUDO
+                                            </button>
+                                        </th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
                     </div>
                 </td>
             </tr>
         </tbody>
-        <!-- <tfoot>
+        <tfoot>
             <tr>
-                <td class="p-2">
-                    <div id="footer-placeholder"></div>
+                <td id="footer-placeholder">
+                    <!-- <div id="footer-placeholder"></div> -->
                 </td>
             </tr>
-        </tfoot> -->
+        </tfoot>
     </table>
 </div>

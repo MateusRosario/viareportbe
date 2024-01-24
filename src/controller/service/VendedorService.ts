@@ -32,7 +32,7 @@ export class VendedorService {
                         vendedor['vendaDescontoDevolucao'] = invalidNumber(devolucao[0].desconto);
 
 
-                        const cancelada = await con.query<{ bruto_produto: number, bruto_servico: number, desconto: number, liquido: number }[]>(`SELECT SUM (vl_produto) :: FLOAT AS bruto_produto, SUM (vl_servico) :: FLOAT AS bruto_servico, SUM (vl_desconto) :: FLOAT AS desconto,SUM (vl_total) :: FLOAT AS liquido FROM venda_cancelada_viewm WHERE data_saida :: DATE BETWEEN $1 AND $2 AND id_vendedor= $3`, [data.inicio, data.fim, vendedor.id])
+                        const cancelada = await con.query<{ bruto_produto: number, bruto_servico: number, desconto: number, liquido: number }[]>(`SELECT SUM (vl_produto) :: FLOAT AS bruto_produto, SUM (vl_servico) :: FLOAT AS bruto_servico, SUM (vl_desconto) :: FLOAT AS desconto,SUM (vl_total) :: FLOAT AS liquido FROM venda_cancelada_viewm WHERE data_cancelamento :: DATE BETWEEN $1 AND $2 AND id_vendedor= $3`, [data.inicio, data.fim, vendedor.id])
 
                         vendedor['vendaCancelada'] = invalidNumber(FuncoesService.somar(cancelada[0].bruto_produto, cancelada[0].bruto_servico, -4));
                         vendedor['vendaDescontoCancelamento'] = invalidNumber(cancelada[0].desconto);

@@ -50,6 +50,17 @@
             box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 10px 0 rgba(0, 0, 0, 0.2);
         }
 
+        .table-hover>tbody>tr:hover>td {
+            /* background-color: #fcfac7; */
+            background-color: white;
+        }
+
+
+        .tabela-listrada>tbody>tr:nth-child(odd)>td {
+            background-color: rgb(201, 201, 201);
+            -webkit-print-color-adjust: exact;
+        }
+
         footer {
             position: absolute;
             bottom: 0px;
@@ -58,16 +69,6 @@
             color: white;
             text-align: center;
             font-size: 12px !important;
-        }
-
-        @media print {
-
-            .nav-bar,
-            .nav,
-            .form {
-                display: none !important;
-            }
-
         }
 
         thead {
@@ -82,6 +83,36 @@
             position: sticky;
             bottom: 0;
             /* Don't forget this, required for the stickiness */
+        }
+
+        @media print {
+            .nav-bar,
+            .nav,
+            .form {
+                display: none !important;
+            }
+
+            .table-hover>tbody>tr:hover>td {
+                background-color: transparent;
+            }
+
+            .tabela-listrada>tbody>tr:nth-child(odd)>td {
+                background-color: #f1f1f1 !important;
+                -webkit-print-color-adjust: exact;
+            }
+            
+            thead {
+                /* Previne problemas de impressão */
+                background: none;
+                position: relative;
+            }
+
+            
+            tfoot {
+                /* Previne problemas de impressão */
+                background: none;
+                position: relative;
+            }
         }
     </style>
 

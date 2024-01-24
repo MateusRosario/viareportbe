@@ -29,11 +29,7 @@ export function BuidWhereByModel(model, cnpj: string) {
           retorno[name] = Equal(value);
         }
       } catch (error) {}
-
     }
-
-
-    
   });
 
 

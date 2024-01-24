@@ -39,9 +39,8 @@
         }
 
         footer {
-            position:fixed;
-            bottom:0;
-            left:0;
+            height: 40px;
+            position: relative;
         }
 
         body {
@@ -156,11 +155,23 @@
         <tbody style="margin-bottom: 20px;">
             <tr>
                 <td class="p-2">
-                    <% for(let i = 0; i < 60; i++) { %>
-                        <div>
-                            Conteúdo
-                        </div>
-                    <% } %>
+                    <table>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <% for(let i = 0; i < 500; i++) { %>
+                                        <div>Conteúdo <%= i %></div>
+                                    <% } %>
+                                </td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                               <td> Abracadabra </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+
                 </td>
             </tr>
         </tbody>
