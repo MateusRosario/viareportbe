@@ -100,10 +100,10 @@ class ViaReportApp {
     app.use("/v1", (req, res, next) => {
 
       if (req.headers["cnpj"]) {
-        //console.log("cnpj: ", req.headers["cnpj"]);
+        console.log("cnpj: ", req.headers["cnpj"]);
         return next();
       } else if (req.query['cnpj']) {
-        //console.log("cnpj: ", req.query["cnpj"]);
+        console.log("cnpj: ", req.query["cnpj"]);
         req.headers['cnpj'] = req.query['cnpj'].toString();
         return next();
       } else {

@@ -115,6 +115,18 @@
             box-shadow: 0 0 0 1px red;
             margin: 1em;
         }
+
+                .table thead th {
+        text-align: center; /* Centraliza o texto no cabeçalho da tabela */
+        }
+        
+        .table tbody td {
+            text-align: right; /* Alinha os números à direita na tabela */
+        }
+    
+        .table tbody td {
+        text-align: center;
+        } 
     </style>
     <style media="print">
         * {
@@ -122,6 +134,19 @@
             margin: 0;
             padding: 0;
         }
+
+        .table thead th {
+        text-align: center; /* Centraliza o texto no cabeçalho da tabela */
+        }
+
+        .table tbody td {
+            text-align: right; /* Alinha os números à direita na tabela */
+        }
+
+        .table tbody td {
+        text-align: center;
+        }   
+
 
         .myTable tbody tr td {
             font-size: 7pt !important;
@@ -294,7 +319,7 @@
                     await BuildVendasTbl(container, idVendedor ? [v.content.find(el => `${el.id}` === idVendedor)] : v.content);
 
                     container.append(`
-                    <div class="row text-start mt-2" style="font-size: 15px; text-transform: uppercase; page-break-before: always;">Devoluções de venda:</div>
+                    <div class="row text-start mt-2" style="font-size: 15px; text-transform: uppercase; page-break-before: always;">    </div>
                      `)
 
                     await BuildDevolucoesPorvendedor(container, idVendedor ? [v.content.find(el => `${el.id}` === idVendedor)] : v.content)
@@ -302,103 +327,167 @@
                 }
             }).catch(err => console.error(err));
         }
-        /**
+
+
+
+
+
+
+
+
+
+         /**
          * Constroi as as vendas na tabela
          **/
         function BuildVendasTbl(container, vendedores) {
-            let getVendas = async (vendedor) => {
-                return fetch(`${apiUrl}comissao/get_comissao_por_item?dataInicio=${dates.inicio.toISOString()}&dataFim=${dates.fim.toISOString()}&idVendedor=${vendedor.id}&idCliente=${idCliente ? idCliente : ''}&idProduto=${idProduto ? idProduto : ''}&idGrupo=${idGrupo ? idGrupo : ''}&todasAsPaginas=true`, {
-                    method: 'GET',
-                    headers: header
-                });
-            };
-            return new Promise(async (resolve, reject) => {
-                for (let vendedor of vendedores) {
-                    
-                    const res = await getVendas(vendedor);
-                    
-                    if (res.ok) {
-                        let vds = await res.json();
-                        
-                        const getVl = (value, flag) => {
-
-                            const isClienteValido = value.cliente && value.cliente.nome != undefined;
-
-                            return `
-                            <div class="row p-1 tb-row ${flag ? '' : 'row-impar'}">
-                                    <div class="col">${value.id_venda}</div>
-                                    <div class="col">${new Date(value.data_saida).toLocaleDateString()}</div>
-                                    <div class="col">${value.cliente && value.cliente.id ? value.cliente.id : ''}</div>
-                                    <div class="col-4 text-start">${isClienteValido ? value.cliente.nome : (
-                                    value.status === 'DEVOLVIDA' ? 'Venda devolvida produto: '.toUpperCase() + (value.nome_produto ? value.nome_produto : '') : ''
-                                )}</div>
-                                    <div class="col text-end">${formatter.format(value.vl_total)}</div>
-                                    <div class="col text-end">${formatter.format(value.comissao_valor)}</div>
-                            </div>
-                            `
-                        }
-
-                        if (vds.content.length > 0) {
-                            let tb = `
-                            <div class="row text-start m-2 ms-0 p-2 ps-1" style="
-                                border: 0.05mm solid #c1c1c1;
-                            ">VENDEDOR:  ${vendedor.nome} (id: ${vendedor.id})</div>
-                            <div class="row p-1 t-header">
-                                <div class="col">Id Venda</div>
-                                <div class="col">Data saída</div>
-                                <div class="col">Id cliente</div>
-                                <div class="col-4 text-start">Nome do cliente</div>
-                                <div class="col text-end">Valor total</div>
-                                <div class="col text-end">Comissao</div>
-                            </div>                            
-                            `
-                            const aux = {
-                                total_venda: 0,
-                                total_comissao: 0
-                            }
-                            let tbRow = '';
-                            let flag = true;
-                            for (let y = 0; y < vds.content.length; y++) {
-
-                                // tbRow = tbRow.concat(`${getVl(vds.content[y], y)}\n`);
-                                // aux.total_venda += vds.content[y].vl_total;
-                                // aux.total_comissao += vds.content[y].comissao_valor;
-
-                                //Agrupa os itens de acordo ao id da venda
-                                if (y + 1 < vds.content.length) {
-                                    if (vds.content[y].id_venda === vds.content[y + 1].id_venda) {
-                                        vds.content[y + 1].vl_total += vds.content[y].vl_total;
-                                    } else {
-                                        tbRow = tbRow.concat(`${getVl(vds.content[y], flag)}\n`);
-                                        aux.total_venda += vds.content[y].vl_total;
-                                        aux.total_comissao += vds.content[y].comissao_valor;
-                                        flag = !flag;
-                                    }
-                                } else {
-                                    tbRow = tbRow.concat(`${getVl(vds.content[y], flag)}\n`);
-                                    aux.total_venda += vds.content[y].vl_total;
-                                    aux.total_comissao += vds.content[y].comissao_valor;
-                                    flag = !flag;
-                                }
-                            }
-
-                            tb = `${tb}\n${tbRow}`;
-
-                            container.append(tb);
-                            container.append(`
-                            <div class="row p-1 t-header" style="background-color: #d5d5d5 !important">
-                                <div class="col-9"></div>
-                                <div class="col me-3 text-end">${formatter.format(aux.total_venda)}</div>
-                                <div class="col text-end">${formatter.format(aux.total_comissao)}</div>
-                            </div> 
-                            `)
-                        }
-                    }
-
+            const buildRows = (vendas) => {
+                let rows = '';
+                let totals = {};
+            
+        // Agrega os valores totais por forma de pagamento
+            vendas.forEach(venda => {
+            let nomeFormaPagamento = venda.nome;
+                if (!totals[nomeFormaPagamento]) {
+                    totals[nomeFormaPagamento] = { total: 0, unitario: 0 };
                 }
-                resolve(undefined);
-            })
+                totals[nomeFormaPagamento].total += venda.total;
+                totals[nomeFormaPagamento].unitario += venda.unitario;
+                });
+            
+                // Cria linhas da tabela com os totais agregados
+                vendas.forEach(venda => {
+                    rows += `
+                        <tr>
+                            <td>${venda.nome}</td>
+                            <td style="text-align: center;">${formatter.format(venda.desconto || 0)}</td>
+                            <td style="text-align: center;">${formatter.format(venda.total)}</td>
+                        </tr>
+                    `;
+                });
+                return rows;
+            };
+        
+            $(container).empty();
+
+            // Processa os vendedores individualmente
+            vendedores.forEach(async (vendedor) => {
+                try {
+                    // Busca as vendas para o vendedor específico
+                    const response = await fetch(`${apiUrl}venda/get_vendas_por_forma_de_pagamento?cnpj=${cnpj}&dataInicio=${dates.inicio.toISOString()}&dataFim=${dates.fim.toISOString()}&idVendedor=${vendedor.id}&idCliente=${idCliente ? idCliente : ''}&idProduto=${idProduto ? idProduto : ''}&idGrupo=${idGrupo ? idGrupo : ''}`, {
+                        method: 'GET',
+                        headers: header
+                    });
+                    const data = await response.json();
+                
+                    if (data && data.vendas && data.vendas.length > 0) {
+                        const vendas = data.vendas;
+                        let tableHTML = `
+                            <h5>${vendedor.nome}</h5>
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Forma de Pagamento</th>
+                                        <th>Denconto</th>
+                                        <th>Valor Bruto</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${buildRows(vendas)}
+                                </tbody>
+                            </table>
+                        `;
+
+                        $(container).append(tableHTML);
+                    }
+                    
+                } catch (error) {
+                    console.error('Erro na requisição:', error);
+                }
+            });
         }
+
+
+
+
+
+
+        /* (funcionando algo)
+                function BuildVendasTbl(container, vendedores) {
+            const buildRows = (vendas) => {
+                let rows = '';
+                let totals = {};
+            
+        // Agrega os valores totais por forma de pagamento
+            vendas.forEach(venda => {
+            let nomeFormaPagamento = venda.nome;
+                if (!totals[nomeFormaPagamento]) {
+                    totals[nomeFormaPagamento] = { total: 0, unitario: 0 };
+                }
+                totals[nomeFormaPagamento].total += venda.total;
+                totals[nomeFormaPagamento].unitario += venda.unitario;
+                });
+            
+                // Cria linhas da tabela com os totais agregados
+                vendas.forEach(venda => {
+                    rows += `
+                        <tr>
+                            <td>${venda.nome}</td>
+                            <td style="text-align: center;">${formatter.format(venda.desconto || 0)}</td>
+                            <td style="text-align: center;">${formatter.format(venda.total)}</td>
+                        </tr>
+                    `;
+                });
+                return rows;
+            };
+        
+            $(container).empty();
+
+            // Processa os vendedores individualmente
+            vendedores.forEach(async (vendedor) => {
+                try {
+                    // Busca as vendas para o vendedor específico
+                    const response = await fetch(`${apiUrl}venda/get_vendas_por_forma_de_pagamento?cnpj=${cnpj}&dataInicio=${dates.inicio.toISOString()}&dataFim=${dates.fim.toISOString()}&idVendedor=${vendedor.id}&idCliente=${idCliente ? idCliente : ''}&idProduto=${idProduto ? idProduto : ''}&idGrupo=${idGrupo ? idGrupo : ''}`, {
+                        method: 'GET',
+                        headers: header
+                    });
+                    const data = await response.json();
+                
+                    if (data && data.vendas && data.vendas.length > 0) {
+                        const vendas = data.vendas;
+                        let tableHTML = `
+                            <h5>${vendedor.nome}</h5>
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Forma de Pagamento</th>
+                                        <th>Denconto</th>
+                                        <th>Valor Bruto</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${buildRows(vendas)}
+                                </tbody>
+                            </table>
+                        `;
+
+                        $(container).append(tableHTML);
+                    }
+                    
+                } catch (error) {
+                    console.error('Erro na requisição:', error);
+                }
+            });
+        }
+        
+        
+        */
+
+
+
+
+
+
+
 
         function BuildDevolucoesPorvendedor(container, vendedores) {
             return new Promise(async (resolve, reject) => {

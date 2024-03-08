@@ -6,6 +6,7 @@ import { getDBConnection } from "../services/data-config-services/db-connection.
 import { VendaCanceladaViewm } from "../model/entity/venda-cancelada-viewm";
 import { FormaPagamento } from "../model/entity/FormaPagamento";
 import { VendaDuplicata } from "../model/entity/venda-duplicata";
+import { VendaItem } from "../model/entity/VendaItem";
 import { Between, In, MoreThan } from "typeorm";
 import { Vendedor } from "../model/entity/Vendedor";
 import { DevolucaoVendaViewm } from "../model/entity/devolucao-venda-viewm";
@@ -42,19 +43,25 @@ export class VendaController implements Controller<Venda> {
                 ` ;
 
     const qry = conn.createQueryBuilder()
-      .select(`v.id_vendedor,
-               TRIM(ven.nome) as nome_vendedor,
-               fp.ID,
-               TRIM ( fp.nome ) AS nome,
-               SUM ( CASE WHEN vcv.ID IS NOT NULL THEN vd.vl_total ELSE 0.00 END ) :: FLOAT AS cancelado,
-               SUM ( CASE WHEN vcv.ID IS NULL THEN vd.vl_total ELSE 0.00 END ) :: FLOAT AS total 
-               `)
+    .select([
+      'v.id_vendedor',
+      'TRIM(ven.nome) AS nome_vendedor',
+      'fp.ID',
+      'TRIM(fp.nome) AS nome',
+      'SUM(CASE WHEN vcv.ID IS NOT NULL THEN vd.vl_total ELSE 0.00 END)::FLOAT AS cancelado',
+      'SUM(CASE WHEN vcv.ID IS NULL THEN vd.vl_total ELSE 0.00 END)::FLOAT AS total',
+      //'vi.nome AS nome_item', // 
+      //'vi.quantidade AS quantidade_item' // 
+    ])
       .from(VendaDuplicata, 'vd')
       .innerJoin(FormaPagamento, 'fp', 'vd.idForma.id = fp.id')
       .innerJoin(Venda, 'v', 'v.id = vd.idVenda.id')
+      //
+      //.innerJoin(VendaItem, 'vi', 'vi.idI = vi.itens')
       .innerJoin(Vendedor, 'ven', 'ven.id = v.id_vendedor')
       .leftJoin(VendaCanceladaViewm, 'vcv', 'vcv.id = v.id')
       .where(where, { ini: filtros.dataInicio, fim: filtros.dataFim })
+      //
       .groupBy('fp.ID, fp.nome, v.id_vendedor.id, ven.nome');
 
     qry.getRawMany().then(vds => {
